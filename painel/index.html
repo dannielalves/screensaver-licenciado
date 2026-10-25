@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f172a">
+
+    <title>Servidor de Licenciamento</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <section id="telaAcesso" class="tela-acesso">
+        <div class="cartao-acesso">
+            <img src="logo.png" alt="Logo da empresa" class="logo-acesso" onerror="this.style.display='none'" onload="this.nextElementSibling.style.display='none'">
+            <div class="logo-fallback">IS</div>
+            <h1 id="tituloAcesso">Servidor de Licenças LPM</h1>
+            <p id="subtituloAcesso">Entre com sua conta para continuar.</p>
+            <form id="formLogin">
+                <div class="campo"><label for="loginUsuario">Usuário</label><input id="loginUsuario" name="usuario" autocomplete="username" required></div>
+                <div class="campo"><label for="loginSenha">Senha</label><input id="loginSenha" name="senha" type="password" autocomplete="current-password" required></div>
+                <div id="camposSetup" hidden>
+                    <div class="campo"><label for="setupNome">Nome do administrador</label><input id="setupNome" autocomplete="name"></div>
+                    <small>Primeiro acesso: crie a conta de administrador. Use uma senha com pelo menos 10 caracteres.</small>
+                </div>
+                <p id="mensagemAcesso" class="mensagem" role="status" aria-live="polite"></p>
+                <button id="btnEntrar" class="botao botao-principal botao-acesso" type="submit">Entrar</button>
+            </form>
+        </div>
+    </section>
+    <div id="areaPainel" hidden>
+    <header class="cabecalho">
+        <div class="cabecalho-conteudo">
+            <div class="marca">
+                <img src="logo.png" alt="Logo da empresa" class="logo-painel" onerror="this.style.display='none'">
+                <!-- <div class="marca-icone"></div> -->
+                <div>
+                    <h1>Servidor de Licenças LPM</h1>
+                    <p>Painel de gerenciamento de clientes</p>
+                </div>
+            </div>
+
+            <div class="acoes-cabecalho">
+                <span id="usuarioLogado" class="usuario-logado"></span>
+                <button type="button" id="btnUsuarios" class="botao botao-secundario"><span aria-hidden="true">♙</span> Usuários</button>
+                <button type="button" id="btnConfiguracoes" class="botao botao-secundario"><span aria-hidden="true">⚙</span> Configurações</button>
+                <button type="button" id="btnLogoff" class="botao botao-secundario">Sair</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="resumo">
+            <div class="resumo-texto">
+                <span class="etiqueta">GERENCIAMENTO</span>
+                <h2>Clientes</h2>
+                <p>Cadastre, pesquise e gerencie as licenças dos seus clientes.</p>
+            </div>
+
+            <button type="button" id="btnAbrirCadastro" class="botao botao-principal">
+                <span aria-hidden="true">＋</span> Cadastrar cliente
+            </button>
+        </section>
+
+        <section class="cartao">
+            <div class="titulo-cartao">
+                <div>
+                    <h2>Buscar clientes</h2>
+                    <p>Pesquise por nome ou código e combine os filtros.</p>
+                </div>
+            </div>
+
+            <div class="filtros">
+                <div class="campo campo-busca">
+                    <label for="buscarCliente">Nome ou código</label>
+                    <div class="entrada-busca">
+                        <span aria-hidden="true">⌕</span>
+                        <input
+                            type="search"
+                            id="buscarCliente"
+                            placeholder="Digite o nome ou código..."
+                            autocomplete="off"
+                        >
+                    </div>
+                </div>
+
+                <div class="campo">
+                    <label for="filtroStatus">Status da licença</label>
+                    <select id="filtroStatus">
+                        <option value="todos">Todos os status</option>
+                        <option value="ativo">Ativos</option>
+                        <option value="inativo">Inativos</option>
+                    </select>
+                </div>
+
+                <div class="campo campo-botao">
+                    <label class="rotulo-invisivel" for="btnLimparFiltros">Limpar filtros</label>
+                    <button type="button" id="btnLimparFiltros" class="botao botao-contorno">
+                        Limpar filtros
+                    </button>
+                </div>
+            </div>
+
+            <p id="resumoBusca" class="texto-auxiliar" aria-live="polite"></p>
+        </section>
+
+        <section class="cartao cartao-tabela">
+            <div class="titulo-cartao titulo-tabela">
+                <div>
+                    <h2>Clientes cadastrados</h2>
+                    <p>Consulte os dados e execute ações sobre cada licença.</p>
+                </div>
+
+                <div class="controle-quantidade">
+                    <label for="itensPorPagina">Por página</label>
+                    <select id="itensPorPagina">
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="tabela-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome do cliente</th>
+                            <th>Código único</th>
+                            <th>Status</th>
+                            <th>Tempo de inatividade</th>
+                            <th id="colunaAcoes">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaClientes">
+                        <tr>
+                            <td colspan="6" class="estado-tabela">Carregando clientes...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="rodape-tabela">
+                <span id="informacaoPaginacao" aria-live="polite">Carregando...</span>
+
+                <nav class="paginacao" aria-label="Paginação de clientes">
+                    <button type="button" id="btnPaginaAnterior" class="botao-pagina" aria-label="Página anterior">‹</button>
+                    <span id="paginaAtual" class="pagina-atual">1 / 1</span>
+                    <button type="button" id="btnProximaPagina" class="botao-pagina" aria-label="Próxima página">›</button>
+                </nav>
+            </div>
+
+            <p id="mensagem" class="mensagem" role="status" aria-live="polite"></p>
+        </section>
+    </main>
+
+    <footer>
+        <p>Interativa Sites &copy; 2026</p>
+    </footer>
+
+    <!-- Modal de cadastro de cliente -->
+    <div id="modalCadastro" class="sobreposicao-modal" hidden>
+        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModalCadastro">
+            <div class="cabecalho-modal">
+                <div>
+                    <span class="etiqueta">NOVO REGISTRO</span>
+                    <h2 id="tituloModalCadastro">Cadastrar cliente</h2>
+                    <p>Preencha o nome para criar uma nova licença.</p>
+                </div>
+                <button type="button" class="botao-fechar" data-fechar-modal="modalCadastro" aria-label="Fechar">×</button>
+            </div>
+
+            <form id="formCliente">
+                <div class="campo">
+                    <label for="nomeCliente">Nome do cliente</label>
+                    <input
+                        type="text"
+                        id="nomeCliente"
+                        name="nomeCliente"
+                        placeholder="Digite o nome do cliente"
+                        maxlength="100"
+                        autocomplete="off"
+                        required
+                    >
+                </div>
+
+                <div class="acoes-modal">
+                    <button type="button" class="botao botao-contorno" data-fechar-modal="modalCadastro">Cancelar</button>
+                    <button type="submit" id="btnSalvar" class="botao botao-principal">Cadastrar cliente</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <!-- Modal de configurações do servidor -->
+    <div id="modalConfiguracoes" class="sobreposicao-modal" hidden>
+        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModalConfiguracoes">
+            <div class="cabecalho-modal">
+                <div>
+                    <span class="etiqueta">CONFIGURAÇÃO</span>
+                    <h2 id="tituloModalConfiguracoes">Servidor</h2>
+                    <p>Configure a conexão usada pelos computadores da sua rede Tailscale.</p>
+                </div>
+                <button type="button" class="botao-fechar" data-fechar-modal="modalConfiguracoes" aria-label="Fechar">×</button>
+            </div>
+
+            <form id="formServidor">
+                <div class="campo">
+                    <label for="tipoEndereco">Tipo de endereço</label>
+                    <select id="tipoEndereco" name="tipoEndereco">
+                        <option value="ip">IP do Tailscale</option>
+                        <option value="nome">Nome do computador (MagicDNS)</option>
+                    </select>
+                </div>
+
+                <div class="campo">
+                    <label for="enderecoServidor">IP ou nome do computador</label>
+                    <input
+                        type="text"
+                        id="enderecoServidor"
+                        name="enderecoServidor"
+                        maxlength="253"
+                        placeholder="100.97.41.23 ou latitude3420"
+                        required
+                    >
+                </div>
+
+                <div class="campo">
+                    <label for="portaServidor">Porta do servidor</label>
+                    <input
+                        type="number"
+                        id="portaServidor"
+                        name="portaServidor"
+                        min="1"
+                        max="65535"
+                        value="3000"
+                        required
+                    >
+                </div>
+
+                <p id="mensagemServidor" class="mensagem" role="status" aria-live="polite"></p>
+
+                <div class="acoes-modal">
+                    <button type="button" class="botao botao-contorno" data-fechar-modal="modalConfiguracoes">Cancelar</button>
+                    <button type="submit" id="btnSalvarServidor" class="botao botao-principal">Salvar configuração</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <!-- Modal de gerenciamento de usuários -->
+    <div id="modalUsuarios" class="sobreposicao-modal" hidden>
+        <section class="modal modal-usuarios" role="dialog" aria-modal="true" aria-labelledby="tituloModalUsuarios">
+            <div class="cabecalho-modal"><div><span class="etiqueta">ADMINISTRAÇÃO</span><h2 id="tituloModalUsuarios">Contas de usuários</h2><p>Crie contas, escolha o perfil e gerencie o acesso ao painel.</p></div><button type="button" class="botao-fechar" data-fechar-modal="modalUsuarios" aria-label="Fechar">×</button></div>
+            <form id="formNovoUsuario">
+                <div class="grade-usuario">
+                    <div class="campo"><label for="novoNomeUsuario">Nome completo</label><input id="novoNomeUsuario" maxlength="100" required></div>
+                    <div class="campo"><label for="novoLoginUsuario">Nome de usuário</label><input id="novoLoginUsuario" minlength="3" maxlength="40" pattern="[A-Za-z0-9._-]+" required></div>
+                    <div class="campo"><label for="novaSenhaUsuario">Senha inicial</label><input id="novaSenhaUsuario" type="password" minlength="10" maxlength="200" autocomplete="new-password" required></div>
+                    <div class="campo"><label for="novoPerfilUsuario">Perfil</label><select id="novoPerfilUsuario"><option value="comum">Usuário comum — somente consulta</option><option value="admin">Administrador</option></select></div>
+                </div>
+                <p class="texto-auxiliar">A senha deve ter pelo menos 10 caracteres. Oriente cada usuário a mantê-la em segurança.</p>
+                <p id="mensagemUsuarios" class="mensagem" role="status" aria-live="polite"></p>
+                <div class="acoes-modal"><button type="submit" id="btnCriarUsuario" class="botao botao-principal">Criar conta</button></div>
+            </form>
+            <hr>
+            <h3>Usuários cadastrados</h3><div id="listaUsuarios" class="lista-usuarios"><p>Carregando contas…</p></div>
+        </section>
+    </div>
+
+    </div><!-- areaPainel -->
+    <script src="script.js"></script>
+</body>
+</html>

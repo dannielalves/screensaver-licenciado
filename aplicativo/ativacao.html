@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#030806">
+
+    <title>Ativação de Licença - Interativa</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            color: #e4f5e9;
+            background:
+                radial-gradient(ellipse at top, #103322 0%, transparent 60%),
+                #030806;
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+
+        .cartao {
+            width: 100%;
+            max-width: 460px;
+            padding: 34px;
+            border: 1px solid #205b3a;
+            border-radius: 18px;
+            background: rgba(5, 19, 12, 0.96);
+            box-shadow: 0 0 45px rgba(25, 230, 107, 0.08);
+        }
+
+        .logo {
+            margin-bottom: 24px;
+            color: #19e66b;
+            font-size: 42px;
+            font-weight: 800;
+            letter-spacing: -3px;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 23px;
+            text-align: center;
+        }
+
+        .subtitulo {
+            margin: 10px 0 28px;
+            color: #9ab5a3;
+            font-size: 14px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin: 18px 0 8px;
+            color: #c8e5d2;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px 14px;
+            border: 1px solid #28543a;
+            border-radius: 8px;
+            outline: none;
+            background: #08150d;
+            color: #e4f5e9;
+            font-size: 14px;
+        }
+
+        input:focus {
+            border-color: #19e66b;
+            box-shadow: 0 0 0 3px rgba(25, 230, 107, 0.1);
+        }
+
+        button {
+            width: 100%;
+            margin-top: 24px;
+            padding: 14px;
+            border: 0;
+            border-radius: 8px;
+            background: #19e66b;
+            color: #03200e;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #52f28e;
+        }
+
+        button:disabled {
+            cursor: wait;
+            opacity: 0.6;
+        }
+
+        #mensagem {
+            display: none;
+            margin-top: 18px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+        }
+
+        #mensagem.erro {
+            display: block;
+            border: 1px solid #783c3c;
+            background: #291010;
+            color: #ffb5b5;
+        }
+
+        #mensagem.sucesso {
+            display: block;
+            border: 1px solid #205b3a;
+            background: #0c2918;
+            color: #8fffb5;
+        }
+
+        .rodape {
+            margin-top: 26px;
+            color: #688575;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        @media (max-width: 480px) {
+            .cartao {
+                padding: 25px 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="cartao">
+        <div class="logo">IS.</div>
+
+        <h1>Ativação de licença</h1>
+
+        <p class="subtitulo">
+            Informe o endereço do servidor e o código de licença
+            fornecido pelo administrador para ativar este aplicativo.
+        </p>
+
+        <form id="formAtivacao">
+            <label for="servidor">Endereço do servidor</label>
+
+            <input
+                id="servidor"
+                name="servidor"
+                type="url"
+                value="http://100.97.41.23:3000"
+                placeholder="http://100.97.41.23:3000"
+                required
+                maxlength="300"
+                autocomplete="url"
+            >
+
+            <label for="codigo">Código de licença</label>
+
+            <input
+                id="codigo"
+                name="codigo"
+                type="text"
+                placeholder="Cole aqui seu código de licença (Ctrl + V)"
+                required
+                maxlength="100"
+                autocomplete="off"
+                spellcheck="false"
+            >
+
+            <button id="botaoAtivar" type="submit">
+                Ativar licença
+            </button>
+
+            <div id="mensagem" role="status" aria-live="polite"></div>
+        </form>
+
+        <div class="rodape">
+            INTERATIVA SISTEMAS WEB<br>
+            Licenciamento e proteção de software
+        </div>
+    </main>
+
+    <script>
+            const formulario = document.getElementById('formAtivacao');
+            const campoServidor = document.getElementById('servidor');
+            const campoCodigo = document.getElementById('codigo');
+            const botaoAtivar = document.getElementById('botaoAtivar');
+            const mensagem = document.getElementById('mensagem');
+
+            function mostrarMensagem(texto, tipo = 'erro') {
+                mensagem.textContent = texto;
+                mensagem.className = tipo;
+            }
+
+            // Recebe mensagens enviadas pelo processo principal do Electron.
+            if (window.interativaLicenca) {
+                // A ponte existe. O formulário poderá solicitar a ativação.
+            } else {
+                mostrarMensagem(
+                    'Não foi possível inicializar o sistema de ativação. Reinicie o aplicativo.',
+                    'erro'
+                );
+            }
+
+            formulario.addEventListener('submit', async (evento) => {
+                evento.preventDefault();
+
+                const servidor = campoServidor.value.trim();
+                const codigo = campoCodigo.value.trim();
+
+                if (!servidor || !codigo) {
+                    mostrarMensagem(
+                        'Preencha o endereço do servidor e o código de licença.',
+                        'erro'
+                    );
+                    return;
+                }
+
+                let endereco;
+
+                try {
+                    endereco = new URL(servidor);
+                } catch {
+                    mostrarMensagem(
+                        'O endereço do servidor não é válido.',
+                        'erro'
+                    );
+                    return;
+                }
+
+                if (
+                    !['http:', 'https:'].includes(endereco.protocol) ||
+                    endereco.username ||
+                    endereco.password ||
+                    endereco.search ||
+                    endereco.hash ||
+                    !['', '/'].includes(endereco.pathname)
+                ) {
+                    mostrarMensagem(
+                        'Informe apenas o endereço base do servidor, incluindo a porta.',
+                        'erro'
+                    );
+                    return;
+                }
+
+                if (!window.interativaLicenca) {
+                    mostrarMensagem(
+                        'A comunicação com o Electron não está disponível.',
+                        'erro'
+                    );
+                    return;
+                }
+
+                botaoAtivar.disabled = true;
+                botaoAtivar.textContent = 'Validando licença...';
+
+                mostrarMensagem(
+                    'Conectando ao servidor. Aguarde...',
+                    'sucesso'
+                );
+
+                try {
+                    const resultado = await window.interativaLicenca.ativar({
+                        servidor: endereco.origin,
+                        codigo
+                    });
+
+                    if (resultado.sucesso) {
+                        mostrarMensagem(
+                            resultado.mensagem || 'Licença ativada com sucesso!',
+                            'sucesso'
+                        );
+                    } else {
+                        mostrarMensagem(
+                            resultado.erro || 'Não foi possível ativar a licença.',
+                            'erro'
+                        );
+                    }
+                } catch (erro) {
+                    mostrarMensagem(
+                        'Falha na comunicação com o aplicativo. Tente novamente.',
+                        'erro'
+                    );
+
+                    console.error('Erro na ativação:', erro);
+                } finally {
+                    botaoAtivar.disabled = false;
+                    botaoAtivar.textContent = 'Ativar licença';
+                }
+            });
+        </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "interativagerenciador",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "app": "electron aplicativo/main.js"
+  },
+  "keywords": [],
+  "author": "Daniel Alves de Araújo <dannielfisico@hotmail.com.> (https://interativasistemas.com.br/)",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "express": "^5.3.0"
+  },
+  "devDependencies": {
+    "electron": "^45.0.0",
+    "electron-builder": "^26.15.3"
+  }
+}

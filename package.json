@@ -1,0 +1,57 @@
+
+{
+  "name": "interativagerenciador",
+  "version": "1.0.0",
+  "description": "Interativa Gerenciador - Proteção de tela e ativação",
+  "main": "aplicativo/main.js",
+  "scripts": {
+    "app": "electron .",
+    "dist:win": "electron-builder --win nsis --x64"
+  },
+  "author": "Daniel Alves de Araújo",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "express": "^5.3.0"
+  },
+  "devDependencies": {
+    "electron": "^45.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "br.com.interativasistemas.gerenciador",
+    "productName": "Interativa Gerenciador",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "aplicativo/**/*",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Interativa-Gerenciador-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Interativa Gerenciador",
+      "installerLanguages": [
+        "pt_BR"
+      ],
+      "language": "1046"
+    }
+  }
+}

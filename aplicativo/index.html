@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#030806">
+
+    <title>Interativa Sistemas Web</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Fundo animado de chuva de bits -->
+    <canvas id="matrix"></canvas>
+    <div class="fundo-escuro"></div>
+
+    <!-- Conteúdo principal da proteção de tela -->
+    <main class="tela">
+
+        <header class="cabecalho">
+            <div class="marca">
+                <div class="logo">IS<span>.</span></div>
+                <div class="marca-texto">
+                    <strong>INTERATIVA</strong>
+                    <span>SISTEMAS WEB</span>
+                </div>
+            </div>
+
+            <div class="indicador">
+                <span class="ponto-verde"></span>
+                SISTEMAS INTELIGENTES
+            </div>
+        </header>
+
+        <section class="conteudo">
+
+            <div class="relogio-area">
+                <p class="legenda">HORÁRIO LOCAL</p>
+
+                <div id="relogio" class="relogio">
+                    00:00:00
+                </div>
+
+                <div id="data" class="data">
+                    Carregando data...
+                </div>
+
+                <div class="linha-decorativa"></div>
+            </div>
+
+            <div class="cartao-profissional">
+
+                <div class="etiqueta">
+                    <span class="ponto-verde"></span>
+                    DESENVOLVIMENTO DIGITAL
+                </div>
+
+                <div id="identificacaoCliente" class="identificacao-cliente" hidden>
+                    LICENÇA DESTINADA A:
+                    <strong id="nomeCliente">Cliente</strong>
+                </div>                
+
+                <h1>
+                    Olá, eu sou<br>
+                    <span>Daniel Alves de Araújo</span>
+                </h1>
+
+                <p class="descricao">
+                    Transformando ideias em código.
+                </p>
+
+                <div class="separador"></div>
+
+                <p class="titulo-tecnologias">
+                    TECNOLOGIAS E SOLUÇÕES
+                </p>
+
+                <div class="tecnologias">
+                    <span>WordPress</span>
+                    <span>HTML</span>
+                    <span>CSS</span>
+                    <span>JavaScript</span>
+                    <span>Node.js</span>
+                </div>
+
+                <div class="contatos">
+                    <div class="contato">
+                        <span class="icone">WEB</span>
+                        <div>
+                            <small>MEU SITE</small>
+                            <a
+                                href="https://interativasistemasweb.com.br"
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                interativasistemasweb.com.br
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="contato">
+                        <span class="icone">@</span>
+                        <div>
+                            <small>INSTAGRAM</small>
+                            <a
+                                href="https://www.instagram.com/dannielfisico/"
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                @dannielfisico
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Área reservada para avisos dinâmicos -->
+            <section id="areaAvisos" class="area-avisos">
+
+                <div class="aviso-cabecalho">
+                    <span class="icone-aviso">✦</span>
+                    <span id="tituloAviso">SOLUÇÕES DIGITAIS</span>
+                </div>
+
+                <h2 id="mensagemTitulo">
+                    Sua presença digital começa aqui.
+                </h2>
+
+                <p id="mensagemAviso">
+                    Criação de sites profissionais, sistemas web
+                    e soluções personalizadas para transformar
+                    suas ideias em resultados.
+                </p>
+
+                <div class="aviso-rodape">
+                    <span class="ponto-verde"></span>
+                    <span>TECNOLOGIA QUE CONECTA IDEIAS</span>
+                </div>
+
+            </section>
+
+        </section>
+
+        <footer class="rodape">
+            <span>INTERATIVA SISTEMAS WEB</span>
+            <span class="rodape-centro">INOVAÇÃO • TECNOLOGIA • DESENVOLVIMENTO</span>
+            <span class="rodape-status">
+                <span class="ponto-verde"></span>
+                PROTEÇÃO ATIVA
+            </span>
+        </footer>
+
+    </main>
+
+    <script>
+        // ==========================================
+        // RELÓGIO E DATA EM TEMPO REAL
+        // ==========================================
+
+        function atualizarRelogio() {
+            const agora = new Date();
+
+            const horario = agora.toLocaleTimeString('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+
+            const dataCompleta = agora.toLocaleDateString('pt-BR', {
+                weekday: 'long',
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            });
+
+            document.getElementById('relogio').textContent = horario;
+
+            document.getElementById('data').textContent =
+                dataCompleta.charAt(0).toUpperCase() +
+                dataCompleta.slice(1);
+        }
+
+        atualizarRelogio();
+        setInterval(atualizarRelogio, 1000);
+
+
+        // ==========================================
+        // ANIMAÇÃO DA CHUVA DE BITS 0 E 1
+        // ==========================================
+
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        let largura = 0;
+        let altura = 0;
+        let colunas = 0;
+        let gotas = [];
+
+        const tamanhoFonte = 16;
+        const caracteres = '01010101010110100101';
+
+        function ajustarCanvas() {
+            const escala = window.devicePixelRatio || 1;
+
+            largura = window.innerWidth;
+            altura = window.innerHeight;
+
+            canvas.width = Math.floor(largura * escala);
+            canvas.height = Math.floor(altura * escala);
+
+            canvas.style.width = largura + 'px';
+            canvas.style.height = altura + 'px';
+
+            ctx.setTransform(escala, 0, 0, escala, 0, 0);
+
+            colunas = Math.ceil(largura / tamanhoFonte);
+
+            gotas = Array.from(
+                { length: colunas },
+                () => Math.random() * (altura / tamanhoFonte)
+            );
+        }
+
+        function desenharMatrix() {
+            // Apaga gradualmente os caracteres anteriores.
+            ctx.fillStyle = 'rgba(3, 8, 6, 0.12)';
+            ctx.fillRect(0, 0, largura, altura);
+
+            ctx.font = tamanhoFonte + 'px monospace';
+
+            for (let i = 0; i < gotas.length; i++) {
+                const caractere = caracteres[
+                    Math.floor(Math.random() * caracteres.length)
+                ];
+
+                const x = i * tamanhoFonte;
+                const y = gotas[i] * tamanhoFonte;
+
+                ctx.fillStyle = Math.random() > 0.97
+                    ? '#d5ffe2'
+                    : '#19e66b';
+
+                ctx.fillText(caractere, x, y);
+
+                if (y > altura && Math.random() > 0.975) {
+                    gotas[i] = 0;
+                } else {
+                    gotas[i] += 0.45;
+                }
+            }
+        }
+
+        ajustarCanvas();
+
+        let ultimoQuadro = 0;
+
+        function animarMatrix(tempo) {
+            // Limita a animação para reduzir o consumo de recursos.
+            if (tempo - ultimoQuadro >= 45) {
+                desenharMatrix();
+                ultimoQuadro = tempo;
+            }
+
+            requestAnimationFrame(animarMatrix);
+        }
+
+        requestAnimationFrame(animarMatrix);
+
+        window.addEventListener('resize', ajustarCanvas);
+        /* ==========================================
+        NOME DINÂMICO DO CLIENTE
+        ========================================== */
+
+        function atualizarNomeCliente(dados) {
+            const area = document.getElementById('identificacaoCliente');
+            const elementoNome = document.getElementById('nomeCliente');
+
+            if (!area || !elementoNome) {
+                return;
+            }
+
+            const nome = typeof dados?.nomeCliente === 'string'
+                ? dados.nomeCliente.trim()
+                : '';
+
+            elementoNome.textContent = nome;
+            area.hidden = !nome;
+        }
+
+        async function carregarNomeCliente() {
+            try {
+                const dados = await window.interativaLicenca.obterDadosTela();
+                atualizarNomeCliente(dados);
+            } catch (erro) {
+                console.error('Não foi possível carregar o nome do cliente:', erro);
+            }
+        }
+
+        if (window.interativaLicenca) {
+            carregarNomeCliente();
+
+            window.interativaLicenca.aoAtualizarDados((dados) => {
+                atualizarNomeCliente(dados);
+            });
+        }        
+    </script>
+
+</body>
+</html>
