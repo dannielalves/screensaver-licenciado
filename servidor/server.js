@@ -1,5 +1,5 @@
 const express = require('express');
-const path = require('path');IG
+const path = require('path');
 const crypto = require('crypto');
 const db = require('./database');
 
