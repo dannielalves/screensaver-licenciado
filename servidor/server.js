@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const db = require('./database');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3022;
 
 // Autenticação por sessão armazenada no SQLite.
 const DURACAO_SESSAO_MS = 8 * 60 * 60 * 1000;
