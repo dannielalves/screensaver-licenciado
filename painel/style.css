@@ -81,6 +81,13 @@ select:focus-visible {
     gap: 16px;
 }
 
+/* mudança pontual no alinhamento do título */
+#tituloAcesso{
+    text-align: center;
+    text-decoration: underline;
+}
+
+
 .marca {
     justify-content: flex-start;
 }

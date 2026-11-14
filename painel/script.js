@@ -18,7 +18,7 @@ async function iniciarAutenticacao() {
 function mostrarAcesso() {
     telaAcesso.hidden = false; areaPainel.hidden = true;
     camposSetup.hidden = !modoConfiguracaoInicial;
-    tituloAcesso.textContent = modoConfiguracaoInicial ? 'Configuração inicial' : 'Servidor de Licenças LPM';
+    tituloAcesso.textContent = modoConfiguracaoInicial ? 'Configuração inicial' : 'Servidor de Licenças';
     subtituloAcesso.textContent = modoConfiguracaoInicial ? 'Crie a primeira conta de administrador.' : 'Entre com sua conta para continuar.';
     btnEntrar.textContent = modoConfiguracaoInicial ? 'Criar administrador' : 'Entrar';
     document.getElementById('setupNome').required = modoConfiguracaoInicial;
