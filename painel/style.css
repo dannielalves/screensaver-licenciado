@@ -85,6 +85,7 @@ select:focus-visible {
 #tituloAcesso{
     text-align: center;
     text-decoration: underline;
+    color: #1b9f4b;
 }
 
 
