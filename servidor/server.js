@@ -7,6 +7,7 @@ const { conectarBanco, proximoId, fecharBanco } = require('./database');
 
 const app = express();
 const PORT = Number(process.env.PORT || 3022);
+const HOST = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1');
 const DURACAO_SESSAO_MS = 8 * 60 * 60 * 1000;
 const COOKIE_SESSAO = 'interativa_sessao';
 
@@ -324,7 +325,7 @@ async function iniciarServidor() {
         { $setOnInsert: { endereco_servidor: 'localhost', porta_servidor: 3022, atualizado_em: agoraIso() } },
         { upsert: true }
     );
-    const servidor = app.listen(PORT, '0.0.0.0', () => {
+    const servidor = app.listen(PORT, HOST, () => {
         console.log('====================================');
         console.log(' INTERATIVA GERENCIADOR');
         console.log('====================================');

@@ -59,10 +59,20 @@ async function proximoId(db, colecao) {
     return documento.valor;
 }
 
+async function executarTransacao(callback) {
+    if (!cliente) throw new Error('O banco MongoDB ainda não está conectado.');
+    const sessao = cliente.startSession();
+    try {
+        return await sessao.withTransaction(() => callback(sessao));
+    } finally {
+        await sessao.endSession();
+    }
+}
+
 async function fecharBanco() {
     if (cliente) await cliente.close();
     cliente = undefined;
     conexaoEmCurso = undefined;
 }
 
-module.exports = { conectarBanco, proximoId, fecharBanco };
+module.exports = { conectarBanco, proximoId, executarTransacao, fecharBanco };
