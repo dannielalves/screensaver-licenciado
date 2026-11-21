@@ -38,6 +38,15 @@ function mostrarPainel(usuario) {
     document.getElementById('secaoBackup').hidden = !admin;
     const botaoUsuarios = document.getElementById('btnUsuarios'); if (botaoUsuarios) botaoUsuarios.hidden = !admin;
     document.getElementById('colunaAcoes').hidden = !admin;
+    let avisoBackup = avisoBackupRestauradoPendente;
+    try { avisoBackup = avisoBackup || sessionStorage.getItem('avisoBackupRestaurado') || ''; } catch { /* O aviso em memória continua disponível. */ }
+    if (avisoBackup && admin) {
+        const statusBackup = document.getElementById('mensagemBackup');
+        statusBackup.textContent = avisoBackup;
+        statusBackup.className = 'mensagem sucesso';
+        avisoBackupRestauradoPendente = '';
+        try { sessionStorage.removeItem('avisoBackupRestaurado'); } catch { /* Ignora armazenamento indisponível. */ }
+    }
     carregarClientes(); carregarConfiguracaoServidor();
 }
 
@@ -117,14 +126,28 @@ async function restaurarBackup(arquivo) {
         const resposta = await fetch('/api/backup/restaurar', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/octet-stream' }, body: arquivo });
         const resultado = await resposta.json();
         if (!resposta.ok) throw new Error(resultado.erro || 'Não foi possível restaurar o backup.');
-        status.textContent = resultado.mensagem; status.className = 'mensagem sucesso';
-        await carregarClientes();
+        const aviso = 'Backup restaurado e dados atualizados no painel.';
+        status.textContent = `${resultado.mensagem} Encerrando sua sessão...`;
+        status.className = 'mensagem sucesso';
+        avisoBackupRestauradoPendente = aviso;
+        try { sessionStorage.setItem('avisoBackupRestaurado', aviso); } catch { /* O aviso em memória continua disponível. */ }
+        setTimeout(async () => {
+            try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); }
+            catch { /* A sessão já foi encerrada pela restauração no servidor. */ }
+            finally {
+                usuarioAtual = null;
+                mostrarAcesso();
+                mensagemAcesso.textContent = 'Restauração concluída. Entre novamente para carregar os dados restaurados.';
+                mensagemAcesso.className = 'mensagem sucesso';
+            }
+        }, 1800);
     } catch (erro) { status.textContent = erro.message; status.className = 'mensagem erro'; }
     finally { seletor.disabled = false; }
 }
 
 let usuarioAtual = null;
 let clienteExclusaoPendente = null;
+let avisoBackupRestauradoPendente = '';
 const telaAcesso = document.getElementById('telaAcesso');
 const areaPainel = document.getElementById('areaPainel');
 const formLogin = document.getElementById('formLogin');
