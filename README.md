@@ -17,7 +17,7 @@ O servidor usa a conexao TLS do Atlas. Restrinja a IP Access List ao endereco de
 2. Copie `.env.example` para `.env`.
 3. No Atlas, abra **Connect > Drivers**, copie a connection string e substitua os marcadores em `MONGODB_URI` no `.env`. Use a Database User, nao sua senha de login do Atlas. Se a senha tiver caracteres especiais, codifique-os para URL.
 4. Mantenha `MONGODB_DB=interativa_gerenciador` e `NODE_ENV=development` para executar localmente.
-5. Rode `npm start` e abra http://localhost:3023. No modo local, o servidor usa a porta 3023 para evitar conflito com uma instancia antiga. Se precisar, defina `PANEL_PORT` para escolher outra porta local.
+5. Rode `npm start` e abra http://localhost:3022. Se precisar escolher outra porta, defina `PANEL_PORT` no ambiente do servidor.
 
 No primeiro acesso, crie a conta de administrador com uma senha de pelo menos 10 caracteres. A connection string fica em `.env`, que e ignorado pelo Git. Nunca publique nem envie esse arquivo.
 

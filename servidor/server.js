@@ -6,7 +6,7 @@ const crypto = require('crypto');
 const { conectarBanco, proximoId, executarTransacao, fecharBanco } = require('./database');
 
 const app = express();
-const PORT = Number(process.env.PANEL_PORT || (process.env.NODE_ENV === 'production' ? process.env.PORT || 3022 : 3023));
+const PORT = Number(process.env.PANEL_PORT || process.env.PORT || 3022);
 const HOST = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1');
 const DURACAO_SESSAO_MS = 8 * 60 * 60 * 1000;
 const COOKIE_SESSAO = 'interativa_sessao';
