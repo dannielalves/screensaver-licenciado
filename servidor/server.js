@@ -3,6 +3,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
+const { BSON } = require('mongodb');
 const { conectarBanco, proximoId, executarTransacao, fecharBanco } = require('./database');
 
 const app = express();
@@ -10,6 +11,9 @@ const PORT = Number(process.env.PANEL_PORT || process.env.PORT || 3022);
 const HOST = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1');
 const DURACAO_SESSAO_MS = 8 * 60 * 60 * 1000;
 const COOKIE_SESSAO = 'interativa_sessao';
+const COLECOES_BACKUP = ['clientes', 'configuracoes', 'usuarios', 'avisos', 'sistema_configuracoes', 'sequencias'];
+const VERSAO_BACKUP = 1;
+const TAMANHO_MAX_BACKUP = 50 * 1024 * 1024;
 
 if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
     throw new Error('PORT deve estar entre 1 e 65535.');
@@ -90,6 +94,61 @@ app.use((req, res, next) => {
     next();
 });
 app.use(express.json({ limit: '32kb' }));
+
+function validarBackup(backup) {
+    if (!backup || backup.formato !== 'interativa-gerenciador-backup' || backup.versao !== VERSAO_BACKUP || !backup.colecoes || typeof backup.colecoes !== 'object' || Array.isArray(backup.colecoes)) return false;
+    const chaves = Object.keys(backup.colecoes).sort();
+    if (JSON.stringify(chaves) !== JSON.stringify([...COLECOES_BACKUP].sort())) return false;
+    try {
+        return COLECOES_BACKUP.every((nome) => Array.isArray(backup.colecoes[nome]) && backup.colecoes[nome].every((doc) => {
+            if (typeof doc !== 'string' || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(doc)) return false;
+            return BSON.deserialize(Buffer.from(doc, 'base64')) && true;
+        }));
+    } catch { return false; }
+}
+
+app.get('/api/backup', exigirAdministrador, async (req, res, next) => {
+    try {
+        const colecoes = {};
+        await executarTransacao(async (sessao) => {
+            for (const nome of COLECOES_BACKUP) {
+                const documentos = await db.collection(nome).find({}, { session: sessao }).toArray();
+                colecoes[nome] = documentos.map((documento) => BSON.serialize(documento).toString('base64'));
+            }
+        });
+        const backup = { formato: 'interativa-gerenciador-backup', versao: VERSAO_BACKUP, criado_em: agoraIso(), colecoes };
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="interativa-backup-${new Date().toISOString().replace(/[:.]/g, '-')}.json"`);
+        res.setHeader('Cache-Control', 'no-store');
+        res.send(JSON.stringify(backup));
+    } catch (erro) { next(erro); }
+});
+
+app.post('/api/backup/restaurar', exigirAdministrador, express.raw({ type: 'application/octet-stream', limit: TAMANHO_MAX_BACKUP }), async (req, res, next) => {
+    try {
+        if (!Buffer.isBuffer(req.body) || !req.body.length) return res.status(400).json({ erro: 'Envie um arquivo de backup válido.' });
+        let backup;
+        try { backup = JSON.parse(req.body.toString('utf8')); } catch { return res.status(400).json({ erro: 'O arquivo não contém um JSON válido.' }); }
+        if (!validarBackup(backup)) return res.status(400).json({ erro: 'Formato ou conteúdo do backup incompatível com este sistema.' });
+        const colecoesRestauradas = Object.fromEntries(COLECOES_BACKUP.map((nome) => [nome, backup.colecoes[nome].map((documento) => BSON.deserialize(Buffer.from(documento, 'base64')))]));
+
+        // A substituição usa transação: se falhar, o MongoDB desfaz as alterações.
+        try {
+            await executarTransacao(async (sessao) => {
+                for (const nome of COLECOES_BACKUP) {
+                    await db.collection(nome).deleteMany({}, { session: sessao });
+                    if (colecoesRestauradas[nome].length) await db.collection(nome).insertMany(colecoesRestauradas[nome], { session: sessao });
+                }
+                await db.collection('sessoes').deleteMany({}, { session: sessao });
+            });
+        } catch (erro) {
+            // O MongoDB reverte as alterações da transação quando ela falha.
+            console.error('Falha na restauração do backup; a transação foi revertida.');
+            throw erro;
+        }
+        res.json({ sucesso: true, mensagem: 'Backup restaurado. Todas as sessões foram encerradas; entre novamente.' });
+    } catch (erro) { next(erro); }
+});
 
 app.get('/api/auth/status', async (req, res) => {
     const quantidade = await db.collection('usuarios').countDocuments();
@@ -335,7 +394,8 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, '..', 'painel', 'in
 app.use((erro, req, res, next) => {
     console.error('Erro na solicitação:', erro);
     if (res.headersSent) return next(erro);
-    res.status(500).json({ erro: 'O servidor não conseguiu concluir a solicitação.' });
+    const status = erro?.status === 413 ? 413 : 500;
+    res.status(status).json({ erro: status === 413 ? 'O arquivo excede o limite de 50 MB.' : 'O servidor não conseguiu concluir a solicitação.' });
 });
 
 async function iniciarServidor() {

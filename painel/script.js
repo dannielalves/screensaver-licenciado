@@ -35,6 +35,7 @@ function mostrarPainel(usuario) {
     const admin = usuario.perfil === 'admin';
     document.getElementById('btnAbrirCadastro').hidden = !admin;
     document.getElementById('btnConfiguracoes').hidden = !admin;
+    document.getElementById('secaoBackup').hidden = !admin;
     const botaoUsuarios = document.getElementById('btnUsuarios'); if (botaoUsuarios) botaoUsuarios.hidden = !admin;
     document.getElementById('colunaAcoes').hidden = !admin;
     carregarClientes(); carregarConfiguracaoServidor();
@@ -59,10 +60,68 @@ const resumoBusca = document.getElementById('resumoBusca');
 const modalCadastro = document.getElementById('modalCadastro');
 const modalConfiguracoes = document.getElementById('modalConfiguracoes');
 const modalConfirmarExclusao = document.getElementById('modalConfirmarExclusao');
+const modalConfirmarRestauracao = document.getElementById('modalConfirmarRestauracao');
 const nomeClienteExclusao = document.getElementById('nomeClienteExclusao');
 const btnSimExcluir = document.getElementById('btnSimExcluir');
 const btnAbrirCadastro = document.getElementById('btnAbrirCadastro');
 const btnConfiguracoes = document.getElementById('btnConfiguracoes');
+
+let arquivoBackupPendente = null;
+
+function nomearArquivoBackup(sufixo = '') {
+    const agora = new Date();
+    const doisDigitos = (valor) => String(valor).padStart(2, '0');
+    const dataHora = `${doisDigitos(agora.getDate())}_${doisDigitos(agora.getMonth() + 1)}_${agora.getFullYear()}_${doisDigitos(agora.getHours())}_${doisDigitos(agora.getMinutes())}`;
+    return `interativa-gerenciador[bkp_${dataHora}${sufixo}].json`;
+}
+
+function salvarArquivoBackup(blob, nome) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url; link.download = nome; link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+document.getElementById('btnBaixarBackup').addEventListener('click', async () => {
+    const botao = document.getElementById('btnBaixarBackup');
+    const status = document.getElementById('mensagemBackup');
+    botao.disabled = true; status.textContent = 'Preparando backup...'; status.className = 'mensagem';
+    try {
+        const resposta = await fetch('/api/backup', { credentials: 'same-origin' });
+        if (!resposta.ok) { const dados = await resposta.json(); throw new Error(dados.erro || 'Não foi possível criar o backup.'); }
+        salvarArquivoBackup(await resposta.blob(), nomearArquivoBackup());
+        status.textContent = 'Backup baixado. Guarde o arquivo em local seguro.'; status.className = 'mensagem sucesso';
+    } catch (erro) { status.textContent = erro.message; status.className = 'mensagem erro'; }
+    finally { botao.disabled = false; }
+});
+
+document.getElementById('arquivoBackup').addEventListener('change', async (evento) => {
+    const arquivo = evento.target.files[0]; evento.target.value = '';
+    if (!arquivo) return;
+    const status = document.getElementById('mensagemBackup');
+    if (arquivo.size > 50 * 1024 * 1024) { status.textContent = 'O arquivo excede o limite de 50 MB.'; status.className = 'mensagem erro'; return; }
+    arquivoBackupPendente = arquivo;
+    document.getElementById('nomeBackupRestauracao').textContent = arquivo.name;
+    abrirModal(document.getElementById('modalConfirmarRestauracao'));
+});
+
+async function restaurarBackup(arquivo) {
+    const status = document.getElementById('mensagemBackup');
+    const seletor = document.getElementById('arquivoBackup'); seletor.disabled = true;
+    status.textContent = 'Baixando uma cópia dos dados atuais...'; status.className = 'mensagem';
+    try {
+        const copia = await fetch('/api/backup', { credentials: 'same-origin' });
+        if (!copia.ok) { const dados = await copia.json(); throw new Error(dados.erro || 'Não foi possível proteger os dados atuais.'); }
+        salvarArquivoBackup(await copia.blob(), nomearArquivoBackup('_antes_restauracao'));
+        status.textContent = 'Aplicando restauração...';
+        const resposta = await fetch('/api/backup/restaurar', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/octet-stream' }, body: arquivo });
+        const resultado = await resposta.json();
+        if (!resposta.ok) throw new Error(resultado.erro || 'Não foi possível restaurar o backup.');
+        status.textContent = resultado.mensagem; status.className = 'mensagem sucesso';
+        await carregarClientes();
+    } catch (erro) { status.textContent = erro.message; status.className = 'mensagem erro'; }
+    finally { seletor.disabled = false; }
+}
 
 let usuarioAtual = null;
 let clienteExclusaoPendente = null;
@@ -165,6 +224,7 @@ function abrirModal(modal) {
 function fecharModal(modal) {
     modal.hidden = true;
     if (modal === modalConfirmarExclusao) clienteExclusaoPendente = null;
+    if (modal === modalConfirmarRestauracao) arquivoBackupPendente = null;
 
     const existeOutroModalAberto = Array.from(
         document.querySelectorAll('.sobreposicao-modal')
@@ -196,6 +256,13 @@ document.querySelectorAll('[data-fechar-modal]').forEach((botao) => {
             fecharModal(modal);
         }
     });
+});
+
+document.getElementById('btnConfirmarRestauracao').addEventListener('click', () => {
+    const arquivo = arquivoBackupPendente;
+    if (!arquivo) return;
+    fecharModal(modalConfirmarRestauracao);
+    restaurarBackup(arquivo);
 });
 
 // Clicar no fundo escuro fecha o modal.

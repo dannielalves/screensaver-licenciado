@@ -88,6 +88,12 @@ O instalador NSIS aparece em `dist/`. O aplicativo pede o endereco publico do se
 
 As contas comuns tem acesso somente de consulta; apenas administradores alteram licencas, configuracoes e usuarios. Senhas sao derivadas com scrypt; sessoes usam cookies HttpOnly e tem expiracao. Limites de tentativas sao aplicados a login, configuracao inicial e validacao de licenca.
 
+## Backup manual e restauracao
+
+No painel, administradores podem baixar um backup JSON ou selecionar um backup para restauracao. Antes de restaurar, o navegador baixa uma copia do estado atual. A restauracao substitui os dados do sistema dentro de uma transacao MongoDB; se a transacao falhar, as alteracoes sao revertidas. As sessoes sao encerradas e todos precisam entrar novamente.
+
+O arquivo contem clientes, configuracoes, usuarios (incluindo hashes de senha), avisos, configuracoes do servidor e sequencias de IDs, codificados como documentos BSON em Base64 para preservar tipos do MongoDB como ObjectId e datas. Trate-o como confidencial e guarde-o em local seguro. O envio para restauracao tem limite de 50 MB. Esse recurso complementa os backups gerenciados pelo Atlas, que devem continuar configurados para recuperacao e retencao de longo prazo.
+
 ## Seguranca e operacao
 
 - Guarde a URI do Atlas apenas no `.env` ou no cofre de segredos do provedor; nao a grave no codigo nem em logs.
