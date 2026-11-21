@@ -550,6 +550,10 @@ footer {
     backdrop-filter: blur(3px);
 }
 
+.sobreposicao-modal.modal-em-primeiro-plano {
+    z-index: 1010;
+}
+
 .modal {
     width: 100%;
     max-width: 540px;
@@ -573,6 +577,60 @@ footer {
 
 .modal-backup .acoes-modal {
     justify-content: flex-start;
+}
+
+.modal-configuracoes {
+    max-width: 850px;
+}
+
+.modal-configuracoes #formServidor {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 18px;
+}
+
+.modal-configuracoes #formServidor .campo {
+    margin-bottom: 12px;
+}
+
+.modal-configuracoes #formServidor .mensagem,
+.modal-configuracoes #formServidor .acoes-modal {
+    grid-column: 1 / -1;
+}
+
+.config-codigos {
+    margin-top: 22px;
+    padding-top: 20px;
+    border-top: 1px solid var(--borda);
+}
+
+.config-codigos h3 {
+    margin-bottom: 6px;
+    font-size: 16px;
+}
+
+.config-codigos > p {
+    margin-bottom: 12px;
+    color: var(--texto-secundario);
+    font-size: 13px;
+}
+
+.opcao-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 12px 0 16px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.opcao-checkbox input {
+    width: 17px;
+    height: 17px;
+}
+
+.config-codigos .campo {
+    margin-bottom: 10px;
 }
 
 .modal-exclusao .cabecalho-modal {
@@ -702,6 +760,15 @@ footer {
 }
 
 @media (max-width: 600px) {
+    .modal-configuracoes #formServidor {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-configuracoes #formServidor .mensagem,
+    .modal-configuracoes #formServidor .acoes-modal {
+        grid-column: auto;
+    }
+
     .cabecalho {
         padding: 17px 4%;
     }
@@ -888,7 +955,7 @@ footer {
 .usuario-comum #listaClientes td:last-child, .usuario-comum #colunaAcoes { display: none !important; }
 
 /* Gestão de usuários */
-.modal-usuarios { width: min(960px, calc(100vw - 32px)); max-height: 90vh; overflow-y: auto; }
+.modal-usuarios { width: min(960px, calc(100vw - 32px)); max-width: 960px; max-height: 90vh; overflow-y: auto; }
 .grade-usuario { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
 .lista-usuarios { overflow-x:auto; margin-top:14px; }
 .tabela-usuarios { width:100%; border-collapse:collapse; font-size:13px; }

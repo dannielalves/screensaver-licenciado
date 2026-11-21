@@ -37,6 +37,7 @@ function mostrarPainel(usuario) {
     document.getElementById('btnConfiguracoes').hidden = !admin;
     const botaoUsuarios = document.getElementById('btnUsuarios'); if (botaoUsuarios) botaoUsuarios.hidden = !admin;
     document.getElementById('colunaAcoes').hidden = !admin;
+    edicaoCodigoHabilitada = false;
     let avisoBackup = avisoBackupRestauradoPendente;
     try { avisoBackup = avisoBackup || sessionStorage.getItem('avisoBackupRestaurado') || ''; } catch { /* O aviso em memória continua disponível. */ }
     if (avisoBackup && admin) {
@@ -47,6 +48,8 @@ function mostrarPainel(usuario) {
         try { sessionStorage.removeItem('avisoBackupRestaurado'); } catch { /* Ignora armazenamento indisponível. */ }
     }
     carregarClientes(); carregarConfiguracaoServidor();
+    if (admin) carregarConfiguracaoEdicaoCodigo();
+    else edicaoCodigoHabilitada = false;
 }
 
 const formCliente = document.getElementById('formCliente');
@@ -68,6 +71,9 @@ const resumoBusca = document.getElementById('resumoBusca');
 const modalCadastro = document.getElementById('modalCadastro');
 const modalConfiguracoes = document.getElementById('modalConfiguracoes');
 const modalBackup = document.getElementById('modalBackup');
+const modalEditarCodigo = document.getElementById('modalEditarCodigo');
+const modalEntradaRapida = document.getElementById('modalEntradaRapida');
+const modalConfirmacaoAcao = document.getElementById('modalConfirmacaoAcao');
 const modalConfirmarExclusao = document.getElementById('modalConfirmarExclusao');
 const modalConfirmarRestauracao = document.getElementById('modalConfirmarRestauracao');
 const nomeClienteExclusao = document.getElementById('nomeClienteExclusao');
@@ -151,6 +157,11 @@ async function restaurarBackup(arquivo) {
 let usuarioAtual = null;
 let clienteExclusaoPendente = null;
 let avisoBackupRestauradoPendente = '';
+let clienteCodigoPendente = null;
+let edicaoCodigoHabilitada = false;
+let senhaMestraConfigurada = false;
+let entradaRapidaPendente = null;
+let confirmacaoAcaoPendente = null;
 const telaAcesso = document.getElementById('telaAcesso');
 const areaPainel = document.getElementById('areaPainel');
 const formLogin = document.getElementById('formLogin');
@@ -247,10 +258,65 @@ function abrirModal(modal) {
     }
 }
 
+function abrirModalEntradaRapida(configuracao) {
+    entradaRapidaPendente = configuracao;
+    document.getElementById('tituloEntradaRapida').textContent = configuracao.titulo;
+    document.getElementById('descricaoEntradaRapida').textContent = configuracao.descricao;
+    document.getElementById('rotuloEntradaRapida').textContent = configuracao.rotulo;
+    document.getElementById('ajudaEntradaRapida').textContent = configuracao.ajuda || '';
+    document.getElementById('valorEntradaRapida').type = configuracao.tipo || 'text';
+    document.getElementById('valorEntradaRapida').value = configuracao.valor || '';
+    document.getElementById('valorEntradaRapida').minLength = configuracao.minimo || 1;
+    document.getElementById('valorEntradaRapida').maxLength = configuracao.maximo || 200;
+    document.getElementById('valorEntradaRapida').autocomplete = configuracao.autocomplete || 'off';
+    document.getElementById('btnSalvarEntradaRapida').textContent = configuracao.botao || 'Salvar';
+    document.getElementById('mensagemEntradaRapida').textContent = '';
+    abrirModal(modalEntradaRapida);
+}
+
+function abrirConfirmacaoAcao(configuracao) {
+    confirmacaoAcaoPendente = configuracao;
+    document.getElementById('tituloConfirmacaoAcao').textContent = configuracao.titulo;
+    document.getElementById('descricaoConfirmacaoAcao').textContent = configuracao.descricao;
+    document.getElementById('btnConfirmarAcao').textContent = configuracao.botao || 'Confirmar';
+    abrirModal(modalConfirmacaoAcao);
+}
+
+document.getElementById('formEntradaRapida').addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    const configuracao = entradaRapidaPendente;
+    const input = document.getElementById('valorEntradaRapida');
+    if (!configuracao || !input.reportValidity()) return;
+    const botao = document.getElementById('btnSalvarEntradaRapida');
+    botao.disabled = true;
+    try { await configuracao.salvar(input.value); }
+    catch (erro) {
+        const status = document.getElementById('mensagemEntradaRapida');
+        status.textContent = erro.message;
+        status.className = 'mensagem erro';
+    } finally { botao.disabled = false; }
+});
+
+document.getElementById('btnConfirmarAcao').addEventListener('click', async () => {
+    const configuracao = confirmacaoAcaoPendente;
+    if (!configuracao) return;
+    fecharModal(modalConfirmacaoAcao);
+    await configuracao.executar();
+});
+
 function fecharModal(modal) {
     modal.hidden = true;
     if (modal === modalConfirmarExclusao) clienteExclusaoPendente = null;
     if (modal === modalConfirmarRestauracao) arquivoBackupPendente = null;
+    if (modal === modalEditarCodigo) {
+        clienteCodigoPendente = null;
+        document.getElementById('senhaMestraEdicao').value = '';
+    }
+    if (modal === modalEntradaRapida) {
+        entradaRapidaPendente = null;
+        document.getElementById('valorEntradaRapida').value = '';
+    }
+    if (modal === modalConfirmacaoAcao) confirmacaoAcaoPendente = null;
 
     const existeOutroModalAberto = Array.from(
         document.querySelectorAll('.sobreposicao-modal')
@@ -317,12 +383,9 @@ document.addEventListener('keydown', (evento) => {
     if (evento.key !== 'Escape') {
         return;
     }
-
-    document.querySelectorAll('.sobreposicao-modal').forEach((modal) => {
-        if (!modal.hidden) {
-            fecharModal(modal);
-        }
-    });
+    const modaisAbertos = Array.from(document.querySelectorAll('.sobreposicao-modal')).filter((modal) => !modal.hidden);
+    const modalSuperior = modaisAbertos.slice().reverse().find((modal) => modal.classList.contains('modal-em-primeiro-plano')) || modaisAbertos[modaisAbertos.length - 1];
+    if (modalSuperior) fecharModal(modalSuperior);
 });
 
 // --------------------------------------------------
@@ -593,66 +656,47 @@ function criarLinhaCliente(cliente) {
 
     acoes.className = 'acoes-cliente';
 
+    const botaoEditarCodigo = document.createElement('button');
+    botaoEditarCodigo.type = 'button';
+    botaoEditarCodigo.textContent = 'Editar código';
+    botaoEditarCodigo.className = 'botao botao-editar';
+    botaoEditarCodigo.hidden = !edicaoCodigoHabilitada;
+    botaoEditarCodigo.title = 'Alterar o código único com a senha mestra.';
+    botaoEditarCodigo.addEventListener('click', () => {
+        clienteCodigoPendente = cliente;
+        document.getElementById('novoCodigoUnico').value = cliente.codigo;
+        document.getElementById('senhaMestraEdicao').value = '';
+        document.getElementById('mensagemEditarCodigo').textContent = '';
+        abrirModal(modalEditarCodigo);
+    });
+    acoes.appendChild(botaoEditarCodigo);
+
     const botaoEditarNome = document.createElement('button');
     botaoEditarNome.type = 'button';
     botaoEditarNome.textContent = 'Editar nome';
     botaoEditarNome.className = 'botao botao-editar';
 
-    botaoEditarNome.addEventListener('click', async () => {
-        const nomeAtualizado = prompt(
-            'Digite o novo nome do cliente:',
-            cliente.nome
-        );
-
-        if (nomeAtualizado === null) {
-            return;
-        }
-
-        const nome = nomeAtualizado.trim();
-
-        if (!nome) {
-            exibirMensagem('O nome não pode ficar vazio.', 'erro');
-            return;
-        }
-
-        if (nome.length > 100) {
-            exibirMensagem(
-                'O nome deve ter no máximo 100 caracteres.',
-                'erro'
-            );
-            return;
-        }
-
-        botaoEditarNome.disabled = true;
-
-        try {
-            const resposta = await fetch(
-                `/api/clientes/${cliente.id}/nome`,
-                {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+    botaoEditarNome.addEventListener('click', () => {
+        abrirModalEntradaRapida({
+            titulo: 'Editar nome do cliente',
+            descricao: 'Altere o nome exibido no painel.',
+            rotulo: 'Nome do cliente',
+            valor: cliente.nome,
+            maximo: 100,
+            salvar: async (nomeInformado) => {
+                const nome = nomeInformado.trim();
+                if (!nome) throw new Error('O nome não pode ficar vazio.');
+                const resposta = await fetch(`/api/clientes/${cliente.id}/nome`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ nome })
-                }
-            );
-
-            const resultado = await resposta.json();
-
-            if (!resposta.ok) {
-                throw new Error(
-                    resultado.erro || 'Não foi possível atualizar o nome.'
-                );
+                });
+                const resultado = await resposta.json();
+                if (!resposta.ok) throw new Error(resultado.erro || 'Não foi possível atualizar o nome.');
+                fecharModal(modalEntradaRapida);
+                exibirMensagem(resultado.mensagem, 'sucesso');
+                await carregarClientes();
             }
-
-            exibirMensagem(resultado.mensagem, 'sucesso');
-            await carregarClientes();
-        } catch (erro) {
-            exibirMensagem(erro.message, 'erro');
-            console.error(erro);
-        } finally {
-            botaoEditarNome.disabled = false;
-        }
+        });
     });
 
     acoes.appendChild(botaoEditarNome);
@@ -702,7 +746,12 @@ botaoLiberar.title =
     'Permite vincular a licença a outro computador.';
 
 botaoLiberar.addEventListener('click', () => {
-    liberarInstalacao(cliente.id, botaoLiberar);
+    abrirConfirmacaoAcao({
+        titulo: 'Liberar instalação?',
+        descricao: 'A licença precisa estar desativada. Depois da liberação, ela poderá ser ativada em outro computador.',
+        botao: 'Liberar instalação',
+        executar: () => liberarInstalacao(cliente.id, botaoLiberar)
+    });
 });
 
 acoes.appendChild(botaoLiberar);
@@ -809,16 +858,6 @@ async function alterarStatus(id, ativo, botao) {
 // --------------------------------------------------
 
 async function liberarInstalacao(id, botao) {
-    const confirmado = confirm(
-        'Deseja liberar a instalação deste cliente? ' +
-        'A licença precisa estar desativada. ' +
-        'Depois da liberação, ela poderá ser ativada em outro computador.'
-    );
-
-    if (!confirmado) {
-        return;
-    }
-
     botao.disabled = true;
 
     try {
@@ -931,6 +970,84 @@ const tipoEndereco = document.getElementById('tipoEndereco');
 const enderecoServidor = document.getElementById('enderecoServidor');
 const portaServidor = document.getElementById('portaServidor');
 const btnSalvarServidor = document.getElementById('btnSalvarServidor');
+
+async function carregarConfiguracaoEdicaoCodigo() {
+    try {
+        const resposta = await fetch('/api/configuracao-edicao-codigo', { credentials: 'same-origin' });
+        const configuracao = await resposta.json();
+        if (!resposta.ok) throw new Error(configuracao.erro || 'Não foi possível carregar a configuração de edição de código.');
+        const habilitadaAnteriormente = edicaoCodigoHabilitada;
+        edicaoCodigoHabilitada = configuracao.habilitada === true;
+        senhaMestraConfigurada = configuracao.senhaMestraConfigurada === true;
+        document.getElementById('habilitarEdicaoCodigo').checked = edicaoCodigoHabilitada;
+        document.getElementById('senhaMestraConfiguracao').placeholder = senhaMestraConfigurada
+            ? 'Deixe vazio para manter a senha atual'
+            : 'Mínimo de 12 caracteres';
+        if (habilitadaAnteriormente !== edicaoCodigoHabilitada) atualizarTabela();
+    } catch (erro) {
+        console.error(erro);
+        const status = document.getElementById('mensagemConfigCodigos');
+        status.textContent = erro.message;
+        status.className = 'mensagem erro';
+    }
+}
+
+document.getElementById('formConfigCodigos').addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    const habilitada = document.getElementById('habilitarEdicaoCodigo').checked;
+    const senhaMestra = document.getElementById('senhaMestraConfiguracao').value;
+    const botao = document.getElementById('btnSalvarConfigCodigos');
+    const status = document.getElementById('mensagemConfigCodigos');
+    botao.disabled = true;
+    try {
+        const resposta = await fetch('/api/configuracao-edicao-codigo', {
+            method: 'PUT', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ habilitada, senhaMestra })
+        });
+        const resultado = await resposta.json();
+        if (!resposta.ok) throw new Error(resultado.erro || 'Não foi possível salvar a configuração.');
+        status.textContent = resultado.mensagem;
+        status.className = 'mensagem sucesso';
+        document.getElementById('senhaMestraConfiguracao').value = '';
+        const habilitadaAnteriormente = edicaoCodigoHabilitada;
+        edicaoCodigoHabilitada = habilitada;
+        senhaMestraConfigurada = senhaMestraConfigurada || Boolean(senhaMestra);
+        document.getElementById('senhaMestraConfiguracao').placeholder = senhaMestraConfigurada
+            ? 'Deixe vazio para manter a senha atual'
+            : 'Mínimo de 12 caracteres';
+        if (habilitadaAnteriormente !== habilitada) atualizarTabela();
+    } catch (erro) {
+        status.textContent = erro.message;
+        status.className = 'mensagem erro';
+    } finally { botao.disabled = false; }
+});
+
+document.getElementById('formEditarCodigo').addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    if (!clienteCodigoPendente) return;
+    const cliente = clienteCodigoPendente;
+    const codigo = document.getElementById('novoCodigoUnico').value.trim();
+    const senhaMestra = document.getElementById('senhaMestraEdicao').value;
+    const botao = document.getElementById('btnSalvarCodigo');
+    const status = document.getElementById('mensagemEditarCodigo');
+    botao.disabled = true;
+    try {
+        const resposta = await fetch(`/api/clientes/${cliente.id}/codigo`, {
+            method: 'PATCH', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ codigo, senhaMestra })
+        });
+        const resultado = await resposta.json();
+        if (!resposta.ok) throw new Error(resultado.erro || 'Não foi possível atualizar o código.');
+        fecharModal(modalEditarCodigo);
+        exibirMensagem(resultado.mensagem, 'sucesso');
+        await carregarClientes();
+    } catch (erro) {
+        status.textContent = erro.message;
+        status.className = 'mensagem erro';
+    } finally { botao.disabled = false; }
+});
 
 
 async function carregarConfiguracaoServidor() {
@@ -1061,18 +1178,41 @@ async function carregarUsuarios() {
             const acoes = document.createElement('td'); acoes.className = 'acoes-usuarios';
             const btnStatus = document.createElement('button'); btnStatus.type = 'button'; btnStatus.className = 'botao botao-contorno'; btnStatus.textContent = conta.ativo ? 'Desativar' : 'Ativar';
             btnStatus.disabled = conta.id === usuarioAtual.id;
-            btnStatus.addEventListener('click', async () => {
-                if (!confirm(`${conta.ativo ? 'Desativar' : 'Ativar'} a conta ${conta.usuario}?`)) return;
-                try { const r = await fetch(`/api/usuarios/${conta.id}/status`, { method:'PATCH', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ativo:!conta.ativo}) }); const d=await r.json(); if(!r.ok) throw new Error(d.erro || 'Falha ao alterar status.'); await carregarUsuarios(); mostrarMensagemUsuarios('Status atualizado.', 'sucesso'); }
-                catch(e) { mostrarMensagemUsuarios(e.message, 'erro'); }
+            btnStatus.addEventListener('click', () => {
+                const acao = conta.ativo ? 'Desativar' : 'Ativar';
+                abrirConfirmacaoAcao({
+                    titulo: `${acao} conta de usuário?`,
+                    descricao: `Confirma ${acao.toLocaleLowerCase('pt-BR')} a conta ${conta.usuario}?`,
+                    botao: acao,
+                    executar: async () => {
+                        try {
+                            const r = await fetch(`/api/usuarios/${conta.id}/status`, { method:'PATCH', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ativo:!conta.ativo}) });
+                            const d = await r.json();
+                            if (!r.ok) throw new Error(d.erro || 'Falha ao alterar status.');
+                            await carregarUsuarios(); mostrarMensagemUsuarios('Status atualizado.', 'sucesso');
+                        } catch(e) { mostrarMensagemUsuarios(e.message, 'erro'); }
+                    }
+                });
             });
             const btnSenha = document.createElement('button'); btnSenha.type='button'; btnSenha.className='botao botao-contorno'; btnSenha.textContent='Redefinir senha';
-            btnSenha.addEventListener('click', async () => {
-                const senha = prompt(`Digite a nova senha para ${conta.usuario} (mínimo 10 caracteres):`);
-                if (senha === null) return;
-                if (senha.length < 10) { mostrarMensagemUsuarios('A senha precisa ter pelo menos 10 caracteres.', 'erro'); return; }
-                try { const r=await fetch(`/api/usuarios/${conta.id}/senha`, {method:'PUT', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body:JSON.stringify({senha})}); const d=await r.json(); if(!r.ok) throw new Error(d.erro || 'Falha ao redefinir a senha.'); mostrarMensagemUsuarios('Senha redefinida. A conta precisará entrar novamente.', 'sucesso'); await carregarUsuarios(); }
-                catch(e) { mostrarMensagemUsuarios(e.message, 'erro'); }
+            btnSenha.addEventListener('click', () => {
+                abrirModalEntradaRapida({
+                    titulo: 'Redefinir senha',
+                    descricao: `Defina uma nova senha para ${conta.usuario}.`,
+                    rotulo: 'Nova senha',
+                    tipo: 'password', minimo: 10, maximo: 200,
+                    autocomplete: 'new-password',
+                    ajuda: 'A senha deve ter pelo menos 10 caracteres.',
+                    botao: 'Redefinir senha',
+                    salvar: async (senha) => {
+                        const r = await fetch(`/api/usuarios/${conta.id}/senha`, { method:'PUT', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body:JSON.stringify({senha}) });
+                        const d = await r.json();
+                        if (!r.ok) throw new Error(d.erro || 'Falha ao redefinir a senha.');
+                        fecharModal(modalEntradaRapida);
+                        mostrarMensagemUsuarios('Senha redefinida. A conta precisará entrar novamente.', 'sucesso');
+                        await carregarUsuarios();
+                    }
+                });
             });
             acoes.append(btnStatus, btnSenha); linha.append(identidade, perfil, status, acoes); corpo.append(linha);
         });

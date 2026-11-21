@@ -198,7 +198,7 @@
 
     <!-- Modal de configurações do servidor -->
     <div id="modalConfiguracoes" class="sobreposicao-modal" hidden>
-        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModalConfiguracoes">
+        <section class="modal modal-configuracoes" role="dialog" aria-modal="true" aria-labelledby="tituloModalConfiguracoes">
             <div class="cabecalho-modal">
                 <div>
                     <span class="etiqueta">CONFIGURAÇÃO</span>
@@ -249,6 +249,25 @@
                     <button type="submit" id="btnSalvarServidor" class="botao botao-principal">Salvar configuração</button>
                 </div>
             </form>
+            <section class="config-codigos" aria-labelledby="tituloConfigCodigos">
+                <h3 id="tituloConfigCodigos">Edição do código único</h3>
+                <p>Habilite a edição de códigos existentes. A senha mestra será armazenada como hash e solicitada em cada alteração.</p>
+                <form id="formConfigCodigos">
+                    <label class="opcao-checkbox" for="habilitarEdicaoCodigo">
+                        <input type="checkbox" id="habilitarEdicaoCodigo">
+                        Permitir editar o código único dos clientes
+                    </label>
+                    <div class="campo">
+                        <label for="senhaMestraConfiguracao">Definir ou trocar senha mestra</label>
+                        <input id="senhaMestraConfiguracao" type="password" minlength="12" maxlength="200" autocomplete="new-password" placeholder="Mínimo de 12 caracteres">
+                    </div>
+                    <p class="texto-auxiliar">A senha não será exibida novamente. Deixe o campo vazio para manter a senha atual; para redefini-la, informe uma nova.</p>
+                    <p id="mensagemConfigCodigos" class="mensagem" role="status" aria-live="polite"></p>
+                    <div class="acoes-modal">
+                        <button type="submit" id="btnSalvarConfigCodigos" class="botao botao-contorno">Salvar configuração</button>
+                    </div>
+                </form>
+            </section>
             <div class="acoes-modal">
                 <button type="button" id="btnAbrirBackup" class="botao botao-contorno">Backup e restauração</button>
             </div>
@@ -272,6 +291,77 @@
             </div>
             <p class="texto-auxiliar">A restauração substitui os dados atuais. Antes disso, será baixada uma cópia de segurança. O arquivo contém dados de clientes e hashes de senha; guarde-o em local seguro.</p>
             <p id="mensagemBackup" class="mensagem" role="status" aria-live="polite"></p>
+        </section>
+    </div>
+
+    <div id="modalEditarCodigo" class="sobreposicao-modal" hidden>
+        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloEditarCodigo">
+            <div class="cabecalho-modal">
+                <div>
+                    <span class="etiqueta">ALTERAÇÃO PROTEGIDA</span>
+                    <h2 id="tituloEditarCodigo">Editar código único</h2>
+                    <p>Informe o código que este cliente já utiliza e confirme com a senha mestra.</p>
+                </div>
+                <button type="button" class="botao-fechar" data-fechar-modal="modalEditarCodigo" aria-label="Fechar">×</button>
+            </div>
+            <form id="formEditarCodigo">
+                <p class="aviso-exclusao">Alterar o código pode impedir instalações que ainda usam o código anterior de validar até serem atualizadas.</p>
+                <div class="campo">
+                    <label for="novoCodigoUnico">Novo código único</label>
+                    <input id="novoCodigoUnico" type="text" maxlength="100" autocomplete="off" required>
+                </div>
+                <div class="campo">
+                    <label for="senhaMestraEdicao">Senha mestra</label>
+                    <input id="senhaMestraEdicao" type="password" maxlength="200" autocomplete="current-password" required>
+                </div>
+                <p id="mensagemEditarCodigo" class="mensagem" role="status" aria-live="polite"></p>
+                <div class="acoes-modal">
+                    <button type="button" class="botao botao-contorno" data-fechar-modal="modalEditarCodigo">Cancelar</button>
+                    <button type="submit" id="btnSalvarCodigo" class="botao botao-principal">Salvar código</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <div id="modalEntradaRapida" class="sobreposicao-modal modal-em-primeiro-plano" hidden>
+        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloEntradaRapida" aria-describedby="descricaoEntradaRapida">
+            <div class="cabecalho-modal">
+                <div>
+                    <span class="etiqueta">AÇÃO DO PAINEL</span>
+                    <h2 id="tituloEntradaRapida"></h2>
+                    <p id="descricaoEntradaRapida"></p>
+                </div>
+                <button type="button" class="botao-fechar" data-fechar-modal="modalEntradaRapida" aria-label="Fechar">×</button>
+            </div>
+            <form id="formEntradaRapida">
+                <div class="campo">
+                    <label id="rotuloEntradaRapida" for="valorEntradaRapida"></label>
+                    <input id="valorEntradaRapida" required>
+                </div>
+                <p id="ajudaEntradaRapida" class="texto-auxiliar"></p>
+                <p id="mensagemEntradaRapida" class="mensagem" role="status" aria-live="polite"></p>
+                <div class="acoes-modal">
+                    <button type="button" class="botao botao-contorno" data-fechar-modal="modalEntradaRapida">Cancelar</button>
+                    <button type="submit" id="btnSalvarEntradaRapida" class="botao botao-principal">Salvar</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <div id="modalConfirmacaoAcao" class="sobreposicao-modal modal-em-primeiro-plano" hidden>
+        <section class="modal modal-exclusao" role="alertdialog" aria-modal="true" aria-labelledby="tituloConfirmacaoAcao" aria-describedby="descricaoConfirmacaoAcao">
+            <div class="cabecalho-modal">
+                <div>
+                    <span class="etiqueta">CONFIRMAÇÃO</span>
+                    <h2 id="tituloConfirmacaoAcao"></h2>
+                </div>
+                <button type="button" class="botao-fechar botao-fechar-confirmacao" data-fechar-modal="modalConfirmacaoAcao" aria-label="Fechar"><span aria-hidden="true">×</span><span>Fechar</span></button>
+            </div>
+            <p id="descricaoConfirmacaoAcao"></p>
+            <div class="acoes-modal">
+                <button type="button" class="botao botao-contorno" data-fechar-modal="modalConfirmacaoAcao">Cancelar</button>
+                <button type="button" id="btnConfirmarAcao" class="botao botao-principal">Confirmar</button>
+            </div>
         </section>
     </div>
 

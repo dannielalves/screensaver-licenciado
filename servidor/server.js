@@ -21,6 +21,7 @@ if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
 
 let db;
 const tentativas = new Map();
+const tentativasSenhaMestra = new Map();
 const agoraIso = () => new Date().toISOString();
 const usuarioPublico = ({ id, nome, usuario, perfil }) => ({ id, nome, usuario, perfil });
 
@@ -31,6 +32,30 @@ function lerCookie(req, nome) {
 
 function criarHashSenha(senha, salt = crypto.randomBytes(16).toString('hex')) {
     return { salt, hash: crypto.scryptSync(senha, salt, 64).toString('hex') };
+}
+
+function validarSenhaMestra(req, senhaFornecida, configuracao) {
+    const chave = `${req.ip}:edicao-codigo`;
+    const agora = Date.now();
+    let bloqueio = tentativasSenhaMestra.get(chave);
+    if (bloqueio?.bloqueado_ate > agora) return 'bloqueada';
+    if (bloqueio?.bloqueado_ate && bloqueio.bloqueado_ate <= agora) {
+        tentativasSenhaMestra.delete(chave);
+        bloqueio = null;
+    }
+    if (!configuracao?.senha_mestra_hash || !configuracao?.senha_mestra_salt) return 'nao_configurada';
+    const hash = crypto.scryptSync(senhaFornecida, configuracao.senha_mestra_salt, 64);
+    const esperado = Buffer.from(configuracao.senha_mestra_hash, 'hex');
+    if (hash.length !== esperado.length || !crypto.timingSafeEqual(hash, esperado)) {
+        const total = (bloqueio?.falhas || 0) + 1;
+        tentativasSenhaMestra.set(chave, { falhas: total, bloqueado_ate: total >= 5 ? agora + 15 * 60 * 1000 : 0 });
+        if (tentativasSenhaMestra.size > 10000) {
+            for (const [k, v] of tentativasSenhaMestra) if (v.bloqueado_ate <= agora) tentativasSenhaMestra.delete(k);
+        }
+        return total >= 5 ? 'bloqueada' : 'incorreta';
+    }
+    tentativasSenhaMestra.delete(chave);
+    return 'valida';
 }
 
 async function obterUsuarioDaSessao(req) {
@@ -264,6 +289,28 @@ app.put('/api/configuracao-servidor', exigirAdministrador, async (req, res) => {
     res.json({ sucesso: true, mensagem: 'Configuração do servidor salva com sucesso!' });
 });
 
+app.get('/api/configuracao-edicao-codigo', exigirAdministrador, async (req, res) => {
+    const configuracao = await db.collection('sistema_configuracoes').findOne({ _id: 1 }, { projection: { edicao_codigo_habilitada: 1, senha_mestra_hash: 1 } });
+    res.json({ habilitada: configuracao?.edicao_codigo_habilitada === true, senhaMestraConfigurada: Boolean(configuracao?.senha_mestra_hash) });
+});
+
+app.put('/api/configuracao-edicao-codigo', exigirAdministrador, async (req, res) => {
+    const habilitada = req.body.habilitada;
+    const senhaMestra = typeof req.body.senhaMestra === 'string' ? req.body.senhaMestra : '';
+    if (typeof habilitada !== 'boolean') return res.status(400).json({ erro: 'Informe se a edição do código único ficará habilitada.' });
+    if (senhaMestra && (senhaMestra.length < 12 || senhaMestra.length > 200)) return res.status(400).json({ erro: 'A senha mestra deve ter entre 12 e 200 caracteres.' });
+    const atual = await db.collection('sistema_configuracoes').findOne({ _id: 1 }, { projection: { senha_mestra_hash: 1 } });
+    if (habilitada && !senhaMestra && !atual?.senha_mestra_hash) return res.status(400).json({ erro: 'Defina uma senha mestra com pelo menos 12 caracteres antes de habilitar a edição.' });
+    const campos = { edicao_codigo_habilitada: habilitada, atualizado_em: agoraIso() };
+    if (senhaMestra) {
+        const hash = criarHashSenha(senhaMestra);
+        campos.senha_mestra_hash = hash.hash;
+        campos.senha_mestra_salt = hash.salt;
+    }
+    await db.collection('sistema_configuracoes').updateOne({ _id: 1 }, { $set: campos }, { upsert: true });
+    res.json({ sucesso: true, mensagem: habilitada ? 'Edição do código único habilitada.' : 'Edição do código único desabilitada.' });
+});
+
 app.post('/api/licenca/validar', limitarTentativas(120, 60 * 1000), async (req, res) => {
     const codigo = typeof req.body.codigo === 'string' ? req.body.codigo.trim() : '';
     const identificador = typeof req.body.identificador_instalacao === 'string' ? req.body.identificador_instalacao.trim() : '';
@@ -358,6 +405,28 @@ app.patch('/api/clientes/:id/nome', exigirAdministrador, async (req, res) => {
     const resultado = await db.collection('clientes').updateOne({ id }, { $set: { nome } });
     if (!resultado.matchedCount) return res.status(404).json({ erro: 'Cliente não encontrado.' });
     res.json({ sucesso: true, mensagem: 'Nome do cliente atualizado com sucesso!', cliente: { id, nome } });
+});
+
+app.patch('/api/clientes/:id/codigo', exigirAdministrador, async (req, res) => {
+    const id = idNumerico(req.params.id);
+    const codigo = typeof req.body.codigo === 'string' ? req.body.codigo.trim() : '';
+    const senhaMestra = typeof req.body.senhaMestra === 'string' ? req.body.senhaMestra : '';
+    if (!id) return res.status(400).json({ erro: 'ID do cliente inválido.' });
+    if (!codigo || codigo.length > 100 || /[\u0000-\u001f\u007f]/.test(codigo)) return res.status(400).json({ erro: 'O código deve conter de 1 a 100 caracteres válidos.' });
+    if (!senhaMestra || senhaMestra.length > 200) return res.status(400).json({ erro: 'Informe a senha mestra.' });
+    const configuracao = await db.collection('sistema_configuracoes').findOne({ _id: 1 }, { projection: { edicao_codigo_habilitada: 1, senha_mestra_hash: 1, senha_mestra_salt: 1 } });
+    if (configuracao?.edicao_codigo_habilitada !== true) return res.status(403).json({ erro: 'A edição do código único está desabilitada nas configurações.' });
+    const estadoSenha = validarSenhaMestra(req, senhaMestra, configuracao);
+    if (estadoSenha === 'bloqueada') return res.status(429).json({ erro: 'Muitas tentativas de senha mestra. Aguarde 15 minutos.' });
+    if (estadoSenha !== 'valida') return res.status(403).json({ erro: 'Senha mestra incorreta.' });
+    try {
+        const resultado = await db.collection('clientes').updateOne({ id }, { $set: { codigo } });
+        if (!resultado.matchedCount) return res.status(404).json({ erro: 'Cliente não encontrado.' });
+        res.json({ sucesso: true, mensagem: 'Código único atualizado com sucesso.' });
+    } catch (erro) {
+        if (erroDuplicidade(erro)) return res.status(409).json({ erro: 'Este código único já está sendo usado por outro cliente.' });
+        throw erro;
+    }
 });
 
 app.patch('/api/clientes/:id/status', exigirAdministrador, async (req, res) => {

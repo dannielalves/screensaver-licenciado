@@ -83,16 +83,20 @@ O instalador NSIS aparece em `dist/`. O aplicativo pede o endereco publico do se
 - `GET/POST /api/clientes`: consulta e cadastro
 - `DELETE /api/clientes/:id`: exclusao permanente do cliente e configuracoes/avisos vinculados (somente administrador)
 - `PATCH /api/clientes/:id/status`: ativacao ou bloqueio
+- `PATCH /api/clientes/:id/codigo`: alteracao protegida do codigo unico (administrador, recurso habilitado e senha mestra)
+- `GET/PUT /api/configuracao-edicao-codigo`: consulta e configuracao da edicao de codigos (somente administrador)
 - `POST /api/clientes/:id/liberar-instalacao`: desvincular uma instalacao
 - `POST /api/licenca/validar`: validacao usada pelo aplicativo
 
 As contas comuns tem acesso somente de consulta; apenas administradores alteram licencas, configuracoes e usuarios. Senhas sao derivadas com scrypt; sessoes usam cookies HttpOnly e tem expiracao. Limites de tentativas sao aplicados a login, configuracao inicial e validacao de licenca.
 
+A edicao manual do codigo unico e desativada por padrao. Um administrador pode habilita-la em **Configuracoes**, definindo uma senha mestra de pelo menos 12 caracteres. O servidor guarda somente o hash e solicita a senha a cada alteracao; cinco falhas consecutivas bloqueiam novas tentativas por 15 minutos. Codigos duplicados sao recusados.
+
 ## Backup manual e restauracao
 
 No painel, administradores podem baixar um backup JSON ou selecionar um backup para restauracao. Antes de restaurar, o navegador baixa uma copia do estado atual. A restauracao substitui os dados do sistema dentro de uma transacao MongoDB; se a transacao falhar, as alteracoes sao revertidas. As sessoes sao encerradas e todos precisam entrar novamente.
 
-O arquivo contem clientes, configuracoes, usuarios (incluindo hashes de senha), avisos, configuracoes do servidor e sequencias de IDs, codificados como documentos BSON em Base64 para preservar tipos do MongoDB como ObjectId e datas. Trate-o como confidencial e guarde-o em local seguro. O envio para restauracao tem limite de 50 MB. Esse recurso complementa os backups gerenciados pelo Atlas, que devem continuar configurados para recuperacao e retencao de longo prazo.
+O arquivo contem clientes, configuracoes, usuarios (incluindo hashes de senha), avisos, configuracoes do servidor (incluindo o hash da senha mestra, se configurada) e sequencias de IDs, codificados como documentos BSON em Base64 para preservar tipos do MongoDB como ObjectId e datas. Trate-o como confidencial e guarde-o em local seguro. O envio para restauracao tem limite de 50 MB. Esse recurso complementa os backups gerenciados pelo Atlas, que devem continuar configurados para recuperacao e retencao de longo prazo.
 
 ## Seguranca e operacao
 
