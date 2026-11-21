@@ -4,6 +4,7 @@ async function iniciarAutenticacao() {
         const resposta = await fetch('/api/auth/status', { credentials: 'same-origin' });
         const estado = await resposta.json();
         modoConfiguracaoInicial = estado.configuracaoInicial;
+        tokenSetupRequerido = estado.tokenRequerido === true;
         if (estado.autenticado && estado.usuario) {
             mostrarPainel(estado.usuario);
         } else {
@@ -22,6 +23,8 @@ function mostrarAcesso() {
     subtituloAcesso.textContent = modoConfiguracaoInicial ? 'Crie a primeira conta de administrador.' : 'Entre com sua conta para continuar.';
     btnEntrar.textContent = modoConfiguracaoInicial ? 'Criar administrador' : 'Entrar';
     document.getElementById('setupNome').required = modoConfiguracaoInicial;
+    document.getElementById('campoTokenSetup').hidden = !(modoConfiguracaoInicial && tokenSetupRequerido);
+    document.getElementById('setupToken').required = modoConfiguracaoInicial && tokenSetupRequerido;
     document.getElementById('loginUsuario').autocomplete = modoConfiguracaoInicial ? 'username' : 'username';
 }
 
@@ -68,6 +71,7 @@ const subtituloAcesso = document.getElementById('subtituloAcesso');
 const btnEntrar = document.getElementById('btnEntrar');
 const mensagemAcesso = document.getElementById('mensagemAcesso');
 let modoConfiguracaoInicial = false;
+let tokenSetupRequerido = false;
 
 formLogin.addEventListener('submit', async (evento) => {
     evento.preventDefault();
@@ -79,7 +83,7 @@ formLogin.addEventListener('submit', async (evento) => {
         : { usuario, senha };
     try {
         const resposta = await fetch(modoConfiguracaoInicial ? '/api/auth/setup' : '/api/auth/login', {
-            method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados)
+            method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', ...(modoConfiguracaoInicial && tokenSetupRequerido ? { 'x-initial-admin-token': document.getElementById('setupToken').value } : {}) }, body: JSON.stringify(dados)
         });
         const resultado = await resposta.json();
         if (!resposta.ok) throw new Error(resultado.erro || 'Não foi possível entrar.');
@@ -791,7 +795,7 @@ async function carregarConfiguracaoServidor() {
         const configuracao = await resposta.json();
 
         enderecoServidor.value = configuracao.endereco_servidor ?? '';
-        portaServidor.value = configuracao.porta_servidor ?? 3000;
+        portaServidor.value = configuracao.porta_servidor ?? 3022;
 
         const endereco = String(configuracao.endereco_servidor || '');
         const pareceIP = /^\d{1,3}(\.\d{1,3}){3}$/.test(endereco);

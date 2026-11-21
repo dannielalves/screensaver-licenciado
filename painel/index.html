@@ -21,6 +21,7 @@
                 <div class="campo"><label for="loginUsuario">Usuário</label><input id="loginUsuario" name="usuario" autocomplete="username" required></div>
                 <div class="campo"><label for="loginSenha">Senha</label><input id="loginSenha" name="senha" type="password" autocomplete="current-password" required></div>
                 <div id="camposSetup" hidden>
+                    <div id="campoTokenSetup" class="campo" hidden><label for="setupToken">Token inicial do servidor</label><input id="setupToken" type="password" autocomplete="off"></div>
                     <div class="campo"><label for="setupNome">Nome do administrador</label><input id="setupNome" autocomplete="name"></div>
                     <small>Primeiro acesso: crie a conta de administrador. Use uma senha com pelo menos 10 caracteres.</small>
                 </div>
@@ -223,7 +224,7 @@
                         id="enderecoServidor"
                         name="enderecoServidor"
                         maxlength="253"
-                        placeholder="100.97.41.23 ou latitude3420"
+                        placeholder="localhost"
                         required
                     >
                 </div>
@@ -236,7 +237,7 @@
                         name="portaServidor"
                         min="1"
                         max="65535"
-                        value="3000"
+                        value="3022"
                         required
                     >
                 </div>

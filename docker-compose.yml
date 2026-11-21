@@ -1,0 +1,12 @@
+﻿services:
+  licenciamento:
+    build: .
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3022
+      MONGODB_URI: ${MONGODB_URI:?Defina MONGODB_URI no arquivo .env}
+      MONGODB_DB: ${MONGODB_DB:-interativa_gerenciador}
+      INITIAL_ADMIN_TOKEN: ${INITIAL_ADMIN_TOKEN:?Defina um token de pelo menos 32 caracteres}
+    ports:
+      - "127.0.0.1:3022:3022"

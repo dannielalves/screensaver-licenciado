@@ -3,7 +3,9 @@ const {
     BrowserWindow,
     screen,
     ipcMain,
-    powerMonitor
+    powerMonitor,
+    Tray,
+    Menu
 } = require('electron');
 
 const path = require('path');
@@ -31,6 +33,7 @@ const INTERVALO_INATIVIDADE = 1000;
 
 let janelasProtecao = [];
 let janelaAtivacao = null;
+let iconeBandeja = null;
 
 let licenca = null;
 let sincronizando = false;
@@ -587,6 +590,7 @@ const identificadorInstalacao =
         };
 
         salvarLicencaLocal(licenca);
+        if (process.platform === 'win32') app.setLoginItemSettings({ openAtLogin: true });
         notificarJanelasProtecao();
 
         if (janelaAtivacao && !janelaAtivacao.isDestroyed()) {
@@ -611,6 +615,23 @@ const identificadorInstalacao =
 });
 
 app.whenReady().then(async () => {
+    if (process.platform === 'win32') app.setLoginItemSettings({ openAtLogin: true });
+    iconeBandeja = new Tray(path.join(__dirname, 'tray.png'));
+    iconeBandeja.setToolTip('Interativa Gerenciador');
+    iconeBandeja.setContextMenu(Menu.buildFromTemplate([
+        { label: 'Abrir protecao agora', click: () => criarProtecaoEmTodosOsMonitores() },
+        { type: 'separator' },
+        {
+            label: 'Iniciar com o Windows',
+            type: 'checkbox',
+            checked: process.platform === 'win32' && app.getLoginItemSettings().openAtLogin,
+            click: (item) => {
+                if (process.platform === 'win32') app.setLoginItemSettings({ openAtLogin: item.checked });
+            }
+        },
+        { type: 'separator' },
+        { label: 'Sair', click: () => app.quit() }
+    ]));
     licenca = lerLicencaLocal();
 
     if (!licenca) {

@@ -1,19 +1,7 @@
-# Dependências
 node_modules/
-
-# Banco de dados e arquivos locais do sistema
 servidor/dados/
-
-# Compilados
 dist/
-
-# Logs e arquivos temporários do sistema operacional
 *.log
 .DS_Store
 Thumbs.db
-
-#
-servidor/admin-token.txt
-
-#
-iaStudio/
+.env

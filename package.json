@@ -1,23 +1,27 @@
-
 {
   "name": "interativagerenciador",
   "version": "1.0.0",
   "description": "Interativa Gerenciador - Proteção de tela e ativação",
   "main": "aplicativo/main.js",
   "scripts": {
+    "start": "node servidor/server.js",
+    "dev": "node --watch servidor/server.js",
+    "migrate:sqlite": "node scripts/migrar-sqlite-mongo.js",
     "app": "electron .",
+    "rebuild": "electron-builder install-app-deps",
     "dist:win": "electron-builder --win nsis --x64"
   },
   "author": "Daniel Alves de Araújo",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "better-sqlite3": "^13.0.3",
-    "express": "^5.3.0"
+    "dotenv": "^18.0.10",
+    "express": "^5.3.0",
+    "mongodb": "^7.9.1"
   },
   "devDependencies": {
     "electron": "^45.0.0",
-    "electron-builder": "^26.0.0"
+    "electron-builder": "26.18.0"
   },
   "build": {
     "appId": "br.com.interativasistemas.gerenciador",
@@ -53,5 +57,8 @@
       ],
       "language": "1046"
     }
+  },
+  "engines": {
+    "node": ">=22.13.0"
   }
 }
