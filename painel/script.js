@@ -35,7 +35,6 @@ function mostrarPainel(usuario) {
     const admin = usuario.perfil === 'admin';
     document.getElementById('btnAbrirCadastro').hidden = !admin;
     document.getElementById('btnConfiguracoes').hidden = !admin;
-    document.getElementById('secaoBackup').hidden = !admin;
     const botaoUsuarios = document.getElementById('btnUsuarios'); if (botaoUsuarios) botaoUsuarios.hidden = !admin;
     document.getElementById('colunaAcoes').hidden = !admin;
     let avisoBackup = avisoBackupRestauradoPendente;
@@ -68,6 +67,7 @@ const resumoBusca = document.getElementById('resumoBusca');
 
 const modalCadastro = document.getElementById('modalCadastro');
 const modalConfiguracoes = document.getElementById('modalConfiguracoes');
+const modalBackup = document.getElementById('modalBackup');
 const modalConfirmarExclusao = document.getElementById('modalConfirmarExclusao');
 const modalConfirmarRestauracao = document.getElementById('modalConfirmarRestauracao');
 const nomeClienteExclusao = document.getElementById('nomeClienteExclusao');
@@ -135,6 +135,9 @@ async function restaurarBackup(arquivo) {
             try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); }
             catch { /* A sessão já foi encerrada pela restauração no servidor. */ }
             finally {
+                document.querySelectorAll('.sobreposicao-modal').forEach((modal) => {
+                    if (!modal.hidden) fecharModal(modal);
+                });
                 usuarioAtual = null;
                 mostrarAcesso();
                 mensagemAcesso.textContent = 'Restauração concluída. Entre novamente para carregar os dados restaurados.';
@@ -267,6 +270,10 @@ btnAbrirCadastro.addEventListener('click', () => {
 
 btnConfiguracoes.addEventListener('click', () => {
     abrirModal(modalConfiguracoes);
+});
+
+document.getElementById('btnAbrirBackup').addEventListener('click', () => {
+    abrirModal(modalBackup);
 });
 
 document.querySelectorAll('[data-fechar-modal]').forEach((botao) => {

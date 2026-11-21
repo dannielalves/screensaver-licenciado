@@ -52,22 +52,6 @@
     </header>
 
     <main class="container">
-        <section id="secaoBackup" class="cartao" hidden>
-            <div class="titulo-cartao">
-                <div>
-                    <h2>Backup e restauração</h2>
-                    <p>Baixe uma cópia dos dados ou restaure um arquivo de backup. A restauração substitui os dados atuais.</p>
-                </div>
-            </div>
-            <div class="acoes-modal">
-                <button type="button" id="btnBaixarBackup" class="botao botao-contorno">Baixar backup</button>
-                <label class="botao botao-contorno" for="arquivoBackup">Selecionar backup para restaurar</label>
-                <input id="arquivoBackup" type="file" accept="application/json,.json" hidden>
-            </div>
-            <p class="texto-auxiliar">O arquivo inclui dados de clientes e hashes de senha. Guarde-o em local seguro. Antes de restaurar, o sistema baixará uma cópia do estado atual.</p>
-            <p id="mensagemBackup" class="mensagem" role="status" aria-live="polite"></p>
-        </section>
-
         <section class="resumo">
             <div class="resumo-texto">
                 <span class="etiqueta">GERENCIAMENTO</span>
@@ -265,6 +249,29 @@
                     <button type="submit" id="btnSalvarServidor" class="botao botao-principal">Salvar configuração</button>
                 </div>
             </form>
+            <div class="acoes-modal">
+                <button type="button" id="btnAbrirBackup" class="botao botao-contorno">Backup e restauração</button>
+            </div>
+        </section>
+    </div>
+
+    <div id="modalBackup" class="sobreposicao-modal" hidden>
+        <section class="modal modal-backup" role="dialog" aria-modal="true" aria-labelledby="tituloModalBackup" aria-describedby="descricaoModalBackup">
+            <div class="cabecalho-modal">
+                <div>
+                    <span class="etiqueta">ADMINISTRAÇÃO</span>
+                    <h2 id="tituloModalBackup">Backup e restauração</h2>
+                    <p id="descricaoModalBackup">Baixe uma cópia ou restaure um arquivo de backup.</p>
+                </div>
+                <button type="button" class="botao-fechar" data-fechar-modal="modalBackup" aria-label="Fechar">×</button>
+            </div>
+            <div class="acoes-modal">
+                <button type="button" id="btnBaixarBackup" class="botao botao-contorno">Baixar backup</button>
+                <label class="botao botao-contorno" for="arquivoBackup">Selecionar backup para restaurar</label>
+                <input id="arquivoBackup" type="file" accept="application/json,.json" hidden>
+            </div>
+            <p class="texto-auxiliar">A restauração substitui os dados atuais. Antes disso, será baixada uma cópia de segurança. O arquivo contém dados de clientes e hashes de senha; guarde-o em local seguro.</p>
+            <p id="mensagemBackup" class="mensagem" role="status" aria-live="polite"></p>
         </section>
     </div>
 

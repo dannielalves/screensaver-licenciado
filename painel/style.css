@@ -567,6 +567,14 @@ footer {
     max-width: 470px;
 }
 
+.modal-backup {
+    max-width: 560px;
+}
+
+.modal-backup .acoes-modal {
+    justify-content: flex-start;
+}
+
 .modal-exclusao .cabecalho-modal {
     margin-bottom: 16px;
 }
