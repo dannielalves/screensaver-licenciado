@@ -272,6 +272,25 @@
         </section>
     </div>
 
+    <div id="modalConfirmarExclusao" class="sobreposicao-modal" hidden>
+        <section class="modal modal-exclusao" role="alertdialog" aria-modal="true" aria-labelledby="tituloConfirmarExclusao" aria-describedby="descricaoConfirmarExclusao nomeClienteExclusao avisoExclusao">
+            <div class="cabecalho-modal">
+                <div>
+                    <span class="etiqueta">CONFIRMAÇÃO DE EXCLUSÃO</span>
+                    <h2 id="tituloConfirmarExclusao">Excluir cliente?</h2>
+                </div>
+                <button type="button" class="botao-fechar botao-fechar-confirmacao" data-fechar-modal="modalConfirmarExclusao" aria-label="Fechar"><span aria-hidden="true">×</span><span>Fechar</span></button>
+            </div>
+            <p id="descricaoConfirmarExclusao">Você está prestes a excluir este cliente:</p>
+            <p id="nomeClienteExclusao" class="nome-cliente-exclusao"></p>
+            <p id="avisoExclusao" class="aviso-exclusao">A licença e os dados vinculados serão apagados permanentemente. O aplicativo pode continuar funcionando offline por até 30 dias após a última validação. Esta ação não pode ser desfeita.</p>
+            <div class="acoes-modal">
+                <button type="button" id="btnNaoExcluir" class="botao botao-contorno" data-fechar-modal="modalConfirmarExclusao">Não</button>
+                <button type="button" id="btnSimExcluir" class="botao botao-excluir-confirmar">Sim, excluir</button>
+            </div>
+        </section>
+    </div>
+
     </div><!-- areaPainel -->
     <script src="script.js"></script>
 </body>

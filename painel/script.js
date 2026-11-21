@@ -58,10 +58,14 @@ const resumoBusca = document.getElementById('resumoBusca');
 
 const modalCadastro = document.getElementById('modalCadastro');
 const modalConfiguracoes = document.getElementById('modalConfiguracoes');
+const modalConfirmarExclusao = document.getElementById('modalConfirmarExclusao');
+const nomeClienteExclusao = document.getElementById('nomeClienteExclusao');
+const btnSimExcluir = document.getElementById('btnSimExcluir');
 const btnAbrirCadastro = document.getElementById('btnAbrirCadastro');
 const btnConfiguracoes = document.getElementById('btnConfiguracoes');
 
 let usuarioAtual = null;
+let clienteExclusaoPendente = null;
 const telaAcesso = document.getElementById('telaAcesso');
 const areaPainel = document.getElementById('areaPainel');
 const formLogin = document.getElementById('formLogin');
@@ -145,6 +149,7 @@ function criarCelula(valor) {
 // --------------------------------------------------
 
 function abrirModal(modal) {
+    modal.elementoAnterior = document.activeElement;
     modal.hidden = false;
     document.body.classList.add('modal-aberto');
 
@@ -159,6 +164,7 @@ function abrirModal(modal) {
 
 function fecharModal(modal) {
     modal.hidden = true;
+    if (modal === modalConfirmarExclusao) clienteExclusaoPendente = null;
 
     const existeOutroModalAberto = Array.from(
         document.querySelectorAll('.sobreposicao-modal')
@@ -167,6 +173,8 @@ function fecharModal(modal) {
     if (!existeOutroModalAberto) {
         document.body.classList.remove('modal-aberto');
     }
+
+    if (modal.elementoAnterior?.isConnected) modal.elementoAnterior.focus();
 }
 
 btnAbrirCadastro.addEventListener('click', () => {
@@ -197,6 +205,14 @@ document.querySelectorAll('.sobreposicao-modal').forEach((modal) => {
             fecharModal(modal);
         }
     });
+});
+
+btnSimExcluir.addEventListener('click', () => {
+    const cliente = clienteExclusaoPendente;
+    if (!cliente) return;
+
+    fecharModal(modalConfirmarExclusao);
+    excluirCliente(cliente.id, cliente.nome, cliente.botao);
 });
 
 // Esc fecha o modal que estiver aberto.
@@ -600,7 +616,13 @@ botaoExcluir.textContent = 'Excluir cliente';
 botaoExcluir.className = 'botao botao-excluir';
 botaoExcluir.title = 'Excluir permanentemente este cliente e os dados vinculados.';
 botaoExcluir.addEventListener('click', () => {
-    excluirCliente(cliente.id, cliente.nome, botaoExcluir);
+    clienteExclusaoPendente = {
+        id: cliente.id,
+        nome: cliente.nome,
+        botao: botaoExcluir
+    };
+    nomeClienteExclusao.textContent = cliente.nome;
+    abrirModal(modalConfirmarExclusao);
 });
 acoes.appendChild(botaoExcluir);
 
@@ -732,15 +754,6 @@ async function liberarInstalacao(id, botao) {
 }
 
 async function excluirCliente(id, nome, botao) {
-    const confirmado = confirm(
-        `Excluir permanentemente o cliente "${nome}"? ` +
-        'A licença, as configurações e os avisos vinculados serão apagados. ' +
-        'O aplicativo pode continuar funcionando offline por até 30 dias após a última validação. ' +
-        'Esta ação não pode ser desfeita.'
-    );
-
-    if (!confirmado) return;
-
     botao.disabled = true;
     try {
         const resposta = await fetch(`/api/clientes/${id}`, {

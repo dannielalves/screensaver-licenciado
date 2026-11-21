@@ -563,6 +563,46 @@ footer {
     animation: modal-entrada 0.16s ease-out;
 }
 
+.modal-exclusao {
+    max-width: 470px;
+}
+
+.modal-exclusao .cabecalho-modal {
+    margin-bottom: 16px;
+}
+
+.nome-cliente-exclusao {
+    margin-top: 8px;
+    padding: 13px 15px;
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 16px;
+    font-weight: 750;
+    overflow-wrap: anywhere;
+}
+
+.aviso-exclusao {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border: 1px solid #fecaca;
+    border-radius: 9px;
+    background: #fef2f2;
+    color: #991b1b;
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.botao-excluir-confirmar {
+    background: #dc2626;
+    color: #fff;
+}
+
+.botao-excluir-confirmar:hover:not(:disabled) {
+    background: #b91c1c;
+}
+
 @keyframes modal-entrada {
     from {
         opacity: 0;
@@ -604,6 +644,19 @@ footer {
 
 .botao-fechar:hover {
     background: #e2e8f0;
+}
+
+.botao-fechar-confirmacao {
+    display: flex;
+    width: auto;
+    gap: 5px;
+    padding: 5px 9px;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.botao-fechar-confirmacao span:first-child {
+    font-size: 20px;
 }
 
 .modal small {
