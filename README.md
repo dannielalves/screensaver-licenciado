@@ -17,7 +17,7 @@ O servidor usa a conexao TLS do Atlas. Restrinja a IP Access List ao endereco de
 2. Copie `.env.example` para `.env`.
 3. No Atlas, abra **Connect > Drivers**, copie a connection string e substitua os marcadores em `MONGODB_URI` no `.env`. Use a Database User, nao sua senha de login do Atlas. Se a senha tiver caracteres especiais, codifique-os para URL.
 4. Mantenha `MONGODB_DB=interativa_gerenciador` e `NODE_ENV=development` para executar localmente.
-5. Rode `npm start` e abra http://localhost:3022.
+5. Rode `npm start` e abra http://localhost:3023. No modo local, o servidor usa a porta 3023 para evitar conflito com uma instancia antiga. Se precisar, defina `PANEL_PORT` para escolher outra porta local.
 
 No primeiro acesso, crie a conta de administrador com uma senha de pelo menos 10 caracteres. A connection string fica em `.env`, que e ignorado pelo Git. Nunca publique nem envie esse arquivo.
 
@@ -47,7 +47,7 @@ Configure as variaveis `MONGODB_URI`, `MONGODB_DB` (opcional), `INITIAL_ADMIN_TO
 docker compose up --build -d
 ```
 
-Coloque um proxy HTTPS, como Caddy ou Nginx com certificado TLS, na frente do servico. Nao exponha a porta do Node diretamente a internet. Defina `NODE_ENV=production` e mantenha `INITIAL_ADMIN_TOKEN` secreto; ele e pedido apenas ao criar o primeiro administrador.
+Coloque um proxy HTTPS, como Caddy ou Nginx com certificado TLS, na frente do servico. Nao exponha a porta do Node diretamente a internet. Defina `NODE_ENV=production`, configure `PORT` (3022 por padrao) e mantenha `INITIAL_ADMIN_TOKEN` secreto; ele e pedido apenas ao criar o primeiro administrador.
 
 Sem Docker, em um servidor Linux:
 
@@ -81,6 +81,7 @@ O instalador NSIS aparece em `dist/`. O aplicativo pede o endereco publico do se
 - `GET /api/status`: disponibilidade do servidor
 - `/api/auth/*`: configuracao inicial, login, logout e sessao
 - `GET/POST /api/clientes`: consulta e cadastro
+- `DELETE /api/clientes/:id`: exclusao permanente do cliente e configuracoes/avisos vinculados (somente administrador)
 - `PATCH /api/clientes/:id/status`: ativacao ou bloqueio
 - `POST /api/clientes/:id/liberar-instalacao`: desvincular uma instalacao
 - `POST /api/licenca/validar`: validacao usada pelo aplicativo

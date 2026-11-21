@@ -458,6 +458,16 @@ tbody tr:hover {
     background: #ffedd5;
 }
 
+.botao-excluir {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+
+.botao-excluir:hover:not(:disabled) {
+    background: #fee2e2;
+}
+
 .rodape-tabela {
     flex-wrap: wrap;
     padding-top: 17px;

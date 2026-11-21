@@ -3,10 +3,10 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
-const { conectarBanco, proximoId, fecharBanco } = require('./database');
+const { conectarBanco, proximoId, executarTransacao, fecharBanco } = require('./database');
 
 const app = express();
-const PORT = Number(process.env.PORT || 3022);
+const PORT = Number(process.env.PANEL_PORT || (process.env.NODE_ENV === 'production' ? process.env.PORT || 3022 : 3023));
 const HOST = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1');
 const DURACAO_SESSAO_MS = 8 * 60 * 60 * 1000;
 const COOKIE_SESSAO = 'interativa_sessao';
@@ -269,6 +269,26 @@ app.post('/api/clientes', exigirAdministrador, async (req, res) => {
     }
     console.log('Cliente cadastrado:', nome);
     res.status(201).json({ sucesso: true, mensagem: 'Cliente cadastrado com sucesso!', cliente: { id, codigo, nome } });
+});
+
+app.delete('/api/clientes/:id', exigirAdministrador, async (req, res) => {
+    const id = idNumerico(req.params.id);
+    if (!id) return res.status(400).json({ erro: 'ID de cliente inválido.' });
+
+    const resultado = await executarTransacao(async (sessao) => {
+        const clientes = db.collection('clientes');
+        const cliente = await clientes.findOne({ id }, { session: sessao });
+        if (!cliente) return null;
+
+        await db.collection('configuracoes').deleteMany({ cliente_id: id }, { session: sessao });
+        await db.collection('avisos').deleteMany({ cliente_id: id }, { session: sessao });
+        await clientes.deleteOne({ id }, { session: sessao });
+        return { nome: cliente.nome };
+    });
+
+    if (!resultado) return res.status(404).json({ erro: 'Cliente não encontrado.' });
+    console.log(`Cliente excluído: ${resultado.nome} (ID ${id})`);
+    res.json({ sucesso: true, mensagem: `Cliente "${resultado.nome}" e seus dados vinculados foram excluídos.` });
 });
 
 app.patch('/api/clientes/:id/nome', exigirAdministrador, async (req, res) => {

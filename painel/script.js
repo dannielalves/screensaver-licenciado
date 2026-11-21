@@ -594,6 +594,16 @@ botaoLiberar.addEventListener('click', () => {
 
 acoes.appendChild(botaoLiberar);
 
+const botaoExcluir = document.createElement('button');
+botaoExcluir.type = 'button';
+botaoExcluir.textContent = 'Excluir cliente';
+botaoExcluir.className = 'botao botao-excluir';
+botaoExcluir.title = 'Excluir permanentemente este cliente e os dados vinculados.';
+botaoExcluir.addEventListener('click', () => {
+    excluirCliente(cliente.id, cliente.nome, botaoExcluir);
+});
+acoes.appendChild(botaoExcluir);
+
 
     celulaAcoes.appendChild(acoes);
     linha.appendChild(celulaAcoes);
@@ -710,6 +720,35 @@ async function liberarInstalacao(id, botao) {
                 'Não foi possível liberar a instalação.'
             );
         }
+
+        exibirMensagem(resultado.mensagem, 'sucesso');
+        await carregarClientes();
+    } catch (erro) {
+        exibirMensagem(erro.message, 'erro');
+        console.error(erro);
+    } finally {
+        botao.disabled = false;
+    }
+}
+
+async function excluirCliente(id, nome, botao) {
+    const confirmado = confirm(
+        `Excluir permanentemente o cliente "${nome}"? ` +
+        'A licença, as configurações e os avisos vinculados serão apagados. ' +
+        'O aplicativo pode continuar funcionando offline por até 30 dias após a última validação. ' +
+        'Esta ação não pode ser desfeita.'
+    );
+
+    if (!confirmado) return;
+
+    botao.disabled = true;
+    try {
+        const resposta = await fetch(`/api/clientes/${id}`, {
+            method: 'DELETE',
+            credentials: 'same-origin'
+        });
+        const resultado = await resposta.json();
+        if (!resposta.ok) throw new Error(resultado.erro || 'Não foi possível excluir o cliente.');
 
         exibirMensagem(resultado.mensagem, 'sucesso');
         await carregarClientes();
